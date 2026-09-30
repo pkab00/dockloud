@@ -1,0 +1,89 @@
+name: Go CI Workflow
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+
+      - name: Test
+        run: 
+          go test -v -race -cover ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file Dockerfile \
+            --tag ghcr.io/pkab00/shortenit:latest \
+            .
+
+      - name: Push Docker image
+        run: docker push ghcr.io/pkab00/shortenit:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # настройка соединения по SSH
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions_shortenit
+          chmod 600 ~/.ssh/github_actions_shortenit
+
+      # перед деплоем необходимо перенести compose файл и миграции бд на сервер
+      - name: Copy files via SSH
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ vars.SERVER_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,internal/db/migrations/"
+          target: "~/shortenit"
+
+      # непосредственно деплой
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -i ~/.ssh/github_actions_shortenit \
+            ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
+            "cd ~/shortenit && docker compose pull && docker compose up -d"
