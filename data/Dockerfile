@@ -7,17 +7,14 @@ RUN go mod download
 
 COPY . .
 
-# RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6
-# RUN swag init -g cmd/app/main.go -o docs
-
-RUN go build -o /app/data ./cmd/app
+RUN go build -o /app/data-bin ./data/cmd/app
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/data .
+COPY --from=builder /app/data-bin ./
 
-EXPOSE 8081
+EXPOSE 8080
 
-CMD ["./data"]
+CMD ["./data-bin"]

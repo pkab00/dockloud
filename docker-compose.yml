@@ -45,11 +45,11 @@ services:
 
   data:
     build:
-      context: data
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: data/Dockerfile
     container_name: dockloud-data
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
