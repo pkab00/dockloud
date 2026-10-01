@@ -3,13 +3,23 @@ package user
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"time"
 
+	apperrors "github.com/pkab00/dockloud/data/internal/errors"
 	"github.com/redis/go-redis/v9"
 )
 
+const userKeyPrefix = "user"
+
+var logger = log.Default()
+
 type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
+	GetByUID(ctx context.Context, uid string) (*User, error)
 }
 
 type RepositoryWithCache struct {
@@ -46,4 +56,57 @@ func (r *RepositoryWithCache) GetAll(ctx context.Context) ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (r *RepositoryWithCache) GetByUID(ctx context.Context, uid string) (*User, error) {
+	var u User
+	var err error
+
+	userKey := fmt.Sprintf("%s:%s", userKeyPrefix, uid)
+	jsonUser, err := r.cache.Get(ctx, userKey).Result()
+
+	switch {
+	case err == nil:
+		if err := json.Unmarshal([]byte(jsonUser), &u); err != nil {
+			_ = r.cache.Del(ctx, userKey).Err()
+			break
+		}
+		return &u, nil
+
+	case errors.Is(err, redis.Nil):
+		// cache miss
+
+	default:
+		logger.Println("cache is unavailable")
+		break
+	}
+
+	query := `
+		SELECT uid, username, email, password_hash, created_at
+        FROM users
+        WHERE uid = $1
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, uid).
+		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.UserNotFound
+		}
+		return nil, fmt.Errorf("error getting user by uid: %w", err)
+	}
+
+	marshaledUser, err := json.Marshal(u)
+	if err != nil {
+		logger.Println("unable to put value to cache")
+		return &u, nil
+	}
+	err = r.cache.Set(ctx, userKey, string(marshaledUser), 10*time.Minute).Err()
+	if err != nil {
+		logger.Println("unable to put value to cache")
+	}
+
+	return &u, nil
 }

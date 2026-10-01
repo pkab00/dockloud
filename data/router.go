@@ -16,4 +16,5 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 	)
 
 	mux.HandleFunc("GET /users", userHand.GetAll)
+	mux.HandleFunc("GET /users/{uid}", userHand.GetByUID)
 }
