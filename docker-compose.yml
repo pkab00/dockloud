@@ -44,9 +44,7 @@ services:
         condition: service_healthy
 
   data:
-    build:
-      context: .
-      dockerfile: data/Dockerfile
+    image: ghcr.io/pkab00/dockloud-data:latest
     container_name: dockloud-data
     ports:
       - "8081:8081"
