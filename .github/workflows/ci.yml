@@ -48,12 +48,12 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --file Dockerfile \
-            --tag ghcr.io/pkab00/shortenit:latest \
+            --file data/Dockerfile \
+            --tag ghcr.io/pkab00/dockloud-data:latest \
             .
 
       - name: Push Docker image
-        run: docker push ghcr.io/pkab00/shortenit:latest
+        run: docker push ghcr.io/pkab00/dockloud-data:latest
 
   deploy:
     needs: build
@@ -77,8 +77,8 @@ jobs:
           host: ${{ vars.SERVER_HOST }}
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml,internal/db/migrations/"
-          target: "~/shortenit"
+          source: "docker-compose.yml,data/internal/database/migrations/"
+          target: "~/dockloud"
 
       # непосредственно деплой
       - name: Deploy to VPS
@@ -86,4 +86,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/github_actions_shortenit \
             ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
-            "cd ~/shortenit && docker compose pull && docker compose up -d"
+            "cd ~/dockloud && docker compose pull && docker compose up -d"
