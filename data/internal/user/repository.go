@@ -20,6 +20,13 @@ var logger = log.Default()
 type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
 	GetByUID(ctx context.Context, uid string) (*User, error)
+	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
+}
+
+type UserCreateRequest struct {
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
 }
 
 type RepositoryWithCache struct {
@@ -109,4 +116,25 @@ func (r *RepositoryWithCache) GetByUID(ctx context.Context, uid string) (*User, 
 	}
 
 	return &u, nil
+}
+
+func (r *RepositoryWithCache) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
+	var u User
+	var err error
+
+	query := `
+		INSERT INTO users(username, email, password_hash)
+		VALUES($1, $2, $3)
+		RETURNING uid, username, email, password_hash, created_at
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, req.Username, req.Email, req.PasswordHash).
+		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating user: %w", err)
+	}
+	return &u, nil
+
 }

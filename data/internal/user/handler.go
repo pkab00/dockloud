@@ -51,3 +51,31 @@ func (h *Handler) GetByUID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
+
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	var req UserCreateRequest
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.serv.Create(ctx, &req)
+	if err != nil {
+		if errors.Is(err, apperrors.InvalidEmail) {
+			http.Error(w, "Invalid Email Format", http.StatusBadRequest)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
+}
