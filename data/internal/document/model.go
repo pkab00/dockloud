@@ -4,7 +4,7 @@ import "time"
 
 type Document struct {
 	ID        int       `json:"id" redis:"id"`
-	OwnerID   int       `json:"owner_id" redis:"owner_id"`
+	OwnerID   string    `json:"owner_id" redis:"owner_id"`
 	Name      string    `json:"name" redis:"name"`
 	Content   string    `json:"content" redis:"content"`
 	IsPrivate bool      `json:"is_private" redis:"is_private"`

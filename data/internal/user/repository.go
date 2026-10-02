@@ -194,9 +194,9 @@ func (r *RepositoryWithCache) Update(ctx context.Context, uid string, req *UserU
 		QueryRowContext(
 			ctx,
 			query,
-			&req.Username,
-			&req.Email,
-			&req.PasswordHash,
+			req.Username,
+			req.Email,
+			req.PasswordHash,
 			uid,
 		).
 		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
