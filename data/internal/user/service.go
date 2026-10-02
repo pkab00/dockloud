@@ -11,6 +11,10 @@ type Service struct {
 	userRepo Repository
 }
 
+func isValidUsername(username string) bool {
+	return len(username) <= 50
+}
+
 func isValidEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
@@ -29,8 +33,18 @@ func (s *Service) GetByUID(ctx context.Context, uid string) (*User, error) {
 }
 
 func (s *Service) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
-	if !isValidEmail(req.Email) {
+	if !isValidUsername(req.Username) {
+		return nil, apperrors.InavalidNickname
+	} else if !isValidEmail(req.Email) {
 		return nil, apperrors.InvalidEmail
 	}
 	return s.userRepo.Create(ctx, req)
+}
+
+func (s *Service) Delete(ctx context.Context, uid string) (*User, error) {
+	return s.userRepo.Delete(ctx, uid)
+}
+
+func (s *Service) Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error) {
+	return s.userRepo.Update(ctx, uid, req)
 }

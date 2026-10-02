@@ -21,12 +21,20 @@ type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
 	GetByUID(ctx context.Context, uid string) (*User, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
+	Delete(ctx context.Context, uid string) (*User, error)
+	Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error)
 }
 
 type UserCreateRequest struct {
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
+}
+
+type UserUpdateRequest struct {
+	Username     *string `json:"username"`
+	Email        *string `json:"email"`
+	PasswordHash *string `json:"password_hash"`
 }
 
 type RepositoryWithCache struct {
@@ -136,5 +144,75 @@ func (r *RepositoryWithCache) Create(ctx context.Context, req *UserCreateRequest
 		return nil, fmt.Errorf("error creating user: %w", err)
 	}
 	return &u, nil
+}
 
+func (r *RepositoryWithCache) Delete(ctx context.Context, uid string) (*User, error) {
+	var u User
+	var err error
+
+	query := `
+		DELETE FROM users
+		WHERE uid = $1
+		RETURNING uid, username, email, password_hash, created_at
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, uid).
+		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.UserNotFound
+		}
+		return nil, fmt.Errorf("error deleting user: %w", err)
+	}
+
+	userKey := fmt.Sprintf("%s:%s", userKeyPrefix, uid)
+	err = r.cache.Del(ctx, userKey).Err()
+	if err != nil {
+		logger.Println("error clearing old cache")
+	}
+
+	return &u, nil
+}
+
+func (r *RepositoryWithCache) Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error) {
+	var u User
+	var err error
+
+	query := `
+        UPDATE users
+        SET
+            username = COALESCE($1, username),
+            email = COALESCE($2, email),
+            password_hash = COALESCE($3, password_hash)
+        WHERE uid = $4
+		RETURNING uid, username, email, password_hash, created_at
+    `
+
+	err = r.db.
+		QueryRowContext(
+			ctx,
+			query,
+			&req.Username,
+			&req.Email,
+			&req.PasswordHash,
+			uid,
+		).
+		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.UserNotFound
+		}
+		return nil, fmt.Errorf("error updating user: %w", err)
+	}
+
+	userKey := fmt.Sprintf("%s:%s", userKeyPrefix, uid)
+	err = r.cache.Del(ctx, userKey).Err()
+	if err != nil {
+		logger.Println("error clearing old cache")
+	}
+
+	return &u, nil
 }
