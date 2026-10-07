@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"net/mail"
+	"strings"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
 )
@@ -12,7 +13,8 @@ type Service struct {
 }
 
 func isValidUsername(username string) bool {
-	return len(username) <= 50
+	return len(username) <= 50 &&
+		strings.TrimSpace(username) != ""
 }
 
 func isValidEmail(email string) bool {
