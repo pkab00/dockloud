@@ -12,6 +12,11 @@ func Logger(next http.Handler) http.Handler {
 			status:         http.StatusOK,
 		}
 
+		if r.URL.Path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		next.ServeHTTP(lw, r)
 		log.Printf("%s %s | %d", r.Method, r.RequestURI, lw.status)
 	})

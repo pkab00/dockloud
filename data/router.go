@@ -32,4 +32,9 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 	mux.HandleFunc("POST /documents", docHand.Create)
 	mux.HandleFunc("DELETE /documents/{id}", docHand.Delete)
 	mux.HandleFunc("PATCH /documents/{id}", docHand.Update)
+
+	// for healthcheck
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 }
