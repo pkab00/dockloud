@@ -26,10 +26,6 @@ func NewService(userRepo Repository) *Service {
 	return &Service{userRepo: userRepo}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]User, error) {
-	return s.userRepo.GetAll(ctx)
-}
-
 func (s *Service) Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error) {
 	return s.userRepo.Find(ctx, req)
 }

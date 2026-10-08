@@ -16,7 +16,6 @@ const userKeyPrefix = "user"
 var logger = log.Default()
 
 type Repository interface {
-	GetAll(ctx context.Context) ([]User, error)
 	Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error)
 	Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
@@ -57,30 +56,6 @@ func NewRepositoryWithCache(db *sql.DB, cache *redis.Client) *RepositoryWithCach
 		db:    db,
 		cache: cache,
 	}
-}
-
-func (r *RepositoryWithCache) GetAll(ctx context.Context) ([]User, error) {
-	query := "SELECT * FROM users"
-	row, err := r.db.QueryContext(ctx, query)
-
-	if err != nil {
-		return nil, fmt.Errorf("error getting all users: %w", err)
-	}
-
-	var users []User
-	for row.Next() {
-		var u User
-		if err := row.Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt); err != nil {
-			return nil, fmt.Errorf("error getting all users: %w", err)
-		}
-		users = append(users, u)
-	}
-
-	if err := row.Err(); err != nil {
-		return nil, fmt.Errorf("error getting all users: %w", err)
-	}
-
-	return users, nil
 }
 
 func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error) {
