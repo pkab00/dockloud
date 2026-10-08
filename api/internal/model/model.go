@@ -19,3 +19,13 @@ type Document struct {
 	CreatedAt time.Time `json:"created_at"`
 	EditedAt  time.Time `json:"edited_at"`
 }
+
+type UserFindResult struct {
+	UIDExists      bool `json:"uid_exists"`
+	UsernameExists bool `json:"username_exists"`
+	EmailExists    bool `json:"email_exists"`
+}
+
+func (r *UserFindResult) UserExists() bool {
+	return r.UIDExists || r.UsernameExists || r.EmailExists
+}

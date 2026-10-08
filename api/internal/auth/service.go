@@ -6,10 +6,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/pkab00/dockloud/api/internal/client/data"
+	apperror "github.com/pkab00/dockloud/api/internal/error"
 	"github.com/pkab00/dockloud/api/internal/model"
 )
+
+var secretKey = os.Getenv("JWT_KEY")
 
 type ExternalCreateRequest struct {
 	Username string `json:"username"`
@@ -17,18 +22,21 @@ type ExternalCreateRequest struct {
 	Password string `json:"password"`
 }
 
+type ExternalAuthRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type Service struct {
-	userClient *data.Client
+	client *data.Client
 }
 
 func NewService(client *data.Client) *Service {
-	return &Service{userClient: client}
+	return &Service{client: client}
 }
 
 func hashPassword(password string) string {
-	key := os.Getenv("JWT_KEY")
-
-	h := hmac.New(sha256.New, []byte(key))
+	h := hmac.New(sha256.New, []byte(secretKey))
 	h.Write([]byte(password))
 	signatureBytes := h.Sum(nil)
 	signatureHex := hex.EncodeToString(signatureBytes)
@@ -36,17 +44,64 @@ func hashPassword(password string) string {
 	return signatureHex
 }
 
+func generateJWTToken(uid string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": uid,                            // идентификатор
+		"iss": "dockloud-api",                 // кем выдан
+		"iat": time.Now(),                     // когда выдан
+		"exp": time.Now().Add(time.Hour * 24), // когда истекает
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	return token.SignedString(secretKey)
+}
+
 func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*model.User, error) {
-	internalReq := data.InternalCreateUserRequest{
+	var err error
+
+	findRes, err := s.client.FindUser(ctx, &data.FindUserRequest{
+		Username: &req.Username,
+		Email:    &req.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case findRes.UsernameExists:
+		return nil, apperror.UsernameInUse
+	case findRes.EmailExists:
+		return nil, apperror.EmailInUse
+	}
+
+	res, err := s.client.CreateUser(ctx, &data.InternalCreateUserRequest{
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: hashPassword(req.Password),
-	}
-
-	res, err := s.userClient.CreateUser(ctx, &internalReq)
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return res, nil
+}
+
+func (s *Service) AuthUser(ctx context.Context, req *ExternalAuthRequest) (*string, error) {
+	var err error
+
+	hashed := hashPassword(req.Password)
+	inReq := data.InternalAuthUserRequest{
+		Email:        &req.Email,
+		PasswordHash: &hashed,
+	}
+	user, err := s.client.AuthUser(ctx, &inReq)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := generateJWTToken(user.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, nil // TODO
 }

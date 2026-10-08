@@ -23,6 +23,17 @@ type InternalUpdateUserRequest struct {
 	PasswordHash *string `json:"password_hash"`
 }
 
+type InternalAuthUserRequest struct {
+	Email        *string `json:"email"`
+	PasswordHash *string `json:"password_hash"`
+}
+
+type FindUserRequest struct {
+	UID      *string `json:"uid"`
+	Username *string `json:"username"`
+	Email    *string `json:"email"`
+}
+
 type CreateDocumentRequest struct {
 	OwnerID   string `json:"owner_id"`
 	Name      string `json:"name"`
@@ -52,21 +63,26 @@ func NewClient(baseURL string) *Client {
 
 // ========================== USERS ==========================
 
-func (c *Client) GetUser(ctx context.Context, uid string) (*model.User, error) {
-	var u *model.User
+func (c *Client) FindUser(ctx context.Context, req *FindUserRequest) (*model.UserFindResult, error) {
+	var u *model.UserFindResult
 	var err error
 
-	req, err := http.NewRequestWithContext(
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("client error: %w", err)
+	}
+
+	dataReq, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/users/%s", c.baseURL, uid),
-		nil,
+		fmt.Sprintf("%s/users/find", c.baseURL),
+		bytes.NewReader(body),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("client error: %w", err)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
 		return nil, fmt.Errorf("client error: %w", err)
 	}
@@ -81,33 +97,39 @@ func (c *Client) GetUser(ctx context.Context, uid string) (*model.User, error) {
 	return u, nil
 }
 
-func (c *Client) GetAllUsers(ctx context.Context) ([]model.User, error) {
-	var u []model.User
+func (c *Client) AuthUser(ctx context.Context, req *InternalAuthUserRequest) (*model.User, error) {
 	var err error
+	var user model.User
 
-	req, err := http.NewRequestWithContext(
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("client error: %w", err)
+	}
+
+	dataReq, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/users", c.baseURL),
-		nil,
+		fmt.Sprintf("%s/users/auth", c.baseURL),
+		bytes.NewReader(body),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("client error: %w", err)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
 		return nil, fmt.Errorf("client error: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 		return nil, fmt.Errorf("client error: %w", err)
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
 	}
-	return u, nil
+	return &user, nil
 }
 
 func (c *Client) CreateUser(ctx context.Context, inReq *InternalCreateUserRequest) (*model.User, error) {

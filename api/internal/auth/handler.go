@@ -3,9 +3,12 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
+
+	apperror "github.com/pkab00/dockloud/api/internal/error"
 )
 
 var logger = log.Default()
@@ -34,8 +37,14 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.serv.CreateUser(ctx, req)
 	if err != nil {
-		logger.Printf("error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, apperror.UsernameInUse):
+			http.Error(w, "Username Already In Use", http.StatusBadRequest)
+		case errors.Is(err, apperror.EmailInUse):
+			http.Error(w, "Email Already In Use", http.StatusBadRequest)
+		default:
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 
