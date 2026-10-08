@@ -3,11 +3,9 @@ package user
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
 	"github.com/redis/go-redis/v9"
@@ -19,7 +17,7 @@ var logger = log.Default()
 
 type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
-	GetByUID(ctx context.Context, uid string) (*User, error)
+	Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
 	Delete(ctx context.Context, uid string) (*User, error)
 	Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error)
@@ -35,6 +33,12 @@ type UserUpdateRequest struct {
 	Username     *string `json:"username"`
 	Email        *string `json:"email"`
 	PasswordHash *string `json:"password_hash"`
+}
+
+type UserFindRequest struct {
+	UID      *string `json:"uid"`
+	Username *string `json:"username"`
+	Email    *string `json:"email"`
 }
 
 type RepositoryWithCache struct {
@@ -73,54 +77,32 @@ func (r *RepositoryWithCache) GetAll(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-func (r *RepositoryWithCache) GetByUID(ctx context.Context, uid string) (*User, error) {
-	var u User
+func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error) {
+	var u UserFindResult
 	var err error
 
-	userKey := fmt.Sprintf("%s:%s", userKeyPrefix, uid)
-	jsonUser, err := r.cache.Get(ctx, userKey).Result()
-
-	switch {
-	case err == nil:
-		if err := json.Unmarshal([]byte(jsonUser), &u); err != nil {
-			_ = r.cache.Del(ctx, userKey).Err()
-			break
-		}
-		return &u, nil
-
-	case errors.Is(err, redis.Nil):
-		// cache miss
-
-	default:
-		logger.Println("cache is unavailable")
-		break
-	}
-
 	query := `
-		SELECT uid, username, email, password_hash, created_at
-        FROM users
-        WHERE uid = $1
+	SELECT
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $1::uuid IS NOT NULL AND uid = $1::uuid
+		) AS uid_exists,
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $2::text IS NOT NULL AND username = $2::text
+		) AS username_exists,
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $3::text IS NOT NULL AND email = $3::text
+		) AS email_exists;
 	`
 
 	err = r.db.
-		QueryRowContext(ctx, query, uid).
-		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+		QueryRowContext(ctx, query, req.UID, req.Username, req.Email).
+		Scan(&u.UIDExists, &u.UsernameExists, &u.EmailExists)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, apperrors.UserNotFound
-		}
 		return nil, fmt.Errorf("error getting user by uid: %w", err)
-	}
-
-	marshaledUser, err := json.Marshal(u)
-	if err != nil {
-		logger.Println("unable to put value to cache")
-		return &u, nil
-	}
-	err = r.cache.Set(ctx, userKey, string(marshaledUser), 10*time.Minute).Err()
-	if err != nil {
-		logger.Println("unable to put value to cache")
 	}
 
 	return &u, nil

@@ -25,8 +25,9 @@ func (s *Service) GetAll(ctx context.Context) ([]Document, error) {
 }
 
 func (s *Service) GetByUID(ctx context.Context, uid string) ([]Document, error) {
-	_, err := s.userRepo.GetByUID(ctx, uid)
-	if err != nil {
+	req := user.UserFindRequest{UID: &uid}
+	res, err := s.userRepo.Find(ctx, &req)
+	if err != nil || !res.UserExists() {
 		return nil, apperrors.UserNotFound
 	}
 	return s.documentRepo.GetByUID(ctx, uid)

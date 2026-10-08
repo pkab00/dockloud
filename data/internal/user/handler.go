@@ -32,19 +32,22 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-func (h *Handler) GetByUID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Find(w http.ResponseWriter, r *http.Request) {
+	var req UserFindRequest
+	var err error
+
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	uid := r.PathValue("uid")
-
-	user, err := h.serv.GetByUID(ctx, uid)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		if errors.Is(err, apperrors.UserNotFound) {
-			http.Error(w, "No Such User Found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.serv.Find(ctx, &req)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 

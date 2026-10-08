@@ -30,8 +30,8 @@ func (s *Service) GetAll(ctx context.Context) ([]User, error) {
 	return s.userRepo.GetAll(ctx)
 }
 
-func (s *Service) GetByUID(ctx context.Context, uid string) (*User, error) {
-	return s.userRepo.GetByUID(ctx, uid)
+func (s *Service) Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error) {
+	return s.userRepo.Find(ctx, req)
 }
 
 func (s *Service) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
