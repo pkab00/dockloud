@@ -37,7 +37,7 @@ func hashPassword(password string) string {
 }
 
 func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*model.User, error) {
-	internalReq := data.InternalCreateRequest{
+	internalReq := data.InternalCreateUserRequest{
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: hashPassword(req.Password),
