@@ -22,6 +22,7 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /users", userHand.GetAll)
 	mux.HandleFunc("GET /users/find", userHand.Find)
+	mux.HandleFunc("GET /users/auth", userHand.Auth)
 	mux.HandleFunc("POST /users", userHand.Create)
 	mux.HandleFunc("DELETE /users/{uid}", userHand.Delete)
 	mux.HandleFunc("PATCH /users/{uid}", userHand.Update)

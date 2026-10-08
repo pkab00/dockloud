@@ -34,6 +34,10 @@ func (s *Service) Find(ctx context.Context, req *UserFindRequest) (*UserFindResu
 	return s.userRepo.Find(ctx, req)
 }
 
+func (s *Service) Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error) {
+	return s.userRepo.Authenticate(ctx, req)
+}
+
 func (s *Service) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
 	if !isValidUsername(req.Username) {
 		return nil, apperrors.InavalidNickname

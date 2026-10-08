@@ -45,14 +45,38 @@ func (h *Handler) Find(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.serv.Find(ctx, &req)
+	res, err := h.serv.Find(ctx, &req)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(res)
+}
+
+func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
+	var req UserAuthRequest
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	success, err := h.serv.Authenticate(ctx, &req)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if *success != true {
+		w.WriteHeader(http.StatusUnauthorized)
+	}
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {

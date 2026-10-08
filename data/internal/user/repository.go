@@ -18,6 +18,7 @@ var logger = log.Default()
 type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
 	Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error)
+	Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
 	Delete(ctx context.Context, uid string) (*User, error)
 	Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error)
@@ -39,6 +40,11 @@ type UserFindRequest struct {
 	UID      *string `json:"uid"`
 	Username *string `json:"username"`
 	Email    *string `json:"email"`
+}
+
+type UserAuthRequest struct {
+	Email        *string `json:"email"`
+	PasswordHash *string `json:"password_hash"`
 }
 
 type RepositoryWithCache struct {
@@ -102,10 +108,37 @@ func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*
 		Scan(&u.UIDExists, &u.UsernameExists, &u.EmailExists)
 
 	if err != nil {
-		return nil, fmt.Errorf("error getting user by uid: %w", err)
+		return nil, fmt.Errorf("error finding user: %w", err)
 	}
 
 	return &u, nil
+}
+
+func (r *RepositoryWithCache) Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error) {
+	var err error
+	var res bool
+
+	query := `
+	SELECT
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE 
+				$1::text IS NOT NULL 
+				AND email = $1::text
+				AND $2::text IS NOT NULL 
+				AND password_hash = $2::text
+		)
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, req.Email, req.PasswordHash).
+		Scan(&res)
+
+	if err != nil {
+		return nil, fmt.Errorf("error authenticating user: %w", err)
+	}
+
+	return &res, nil
 }
 
 func (r *RepositoryWithCache) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {
