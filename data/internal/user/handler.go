@@ -18,36 +18,47 @@ func NewHandler(serv *Service) *Handler {
 	return &Handler{serv: serv}
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Find(w http.ResponseWriter, r *http.Request) {
+	var req UserFindRequest
+	var err error
+
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	users, err := h.serv.GetAll(ctx)
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.serv.Find(ctx, &req)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(res)
 }
 
-func (h *Handler) GetByUID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
+	var req UserAuthRequest
+	var err error
+
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	uid := r.PathValue("uid")
-
-	user, err := h.serv.GetByUID(ctx, uid)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		if errors.Is(err, apperrors.UserNotFound) {
-			http.Error(w, "No Such User Found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
+	user, err := h.serv.Authenticate(ctx, &req)
+	if err != nil {
+		http.Error(w, "Authorisation Error", http.StatusUnauthorized)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }

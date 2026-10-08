@@ -18,8 +18,9 @@ const userKeyPrefix = "user"
 var logger = log.Default()
 
 type Repository interface {
-	GetAll(ctx context.Context) ([]User, error)
-	GetByUID(ctx context.Context, uid string) (*User, error)
+	Get(ctx context.Context, uid string) (*User, error)
+	Find(ctx context.Context, req *UserFindRequest) (*UserFindResponse, error)
+	Authenticate(ctx context.Context, req *UserAuthRequest) (*string, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
 	Delete(ctx context.Context, uid string) (*User, error)
 	Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error)
@@ -37,6 +38,17 @@ type UserUpdateRequest struct {
 	PasswordHash *string `json:"password_hash"`
 }
 
+type UserFindRequest struct {
+	UID      *string `json:"uid"`
+	Username *string `json:"username"`
+	Email    *string `json:"email"`
+}
+
+type UserAuthRequest struct {
+	Email        *string `json:"email"`
+	PasswordHash *string `json:"password_hash"`
+}
+
 type RepositoryWithCache struct {
 	db    *sql.DB
 	cache *redis.Client
@@ -49,31 +61,62 @@ func NewRepositoryWithCache(db *sql.DB, cache *redis.Client) *RepositoryWithCach
 	}
 }
 
-func (r *RepositoryWithCache) GetAll(ctx context.Context) ([]User, error) {
-	query := "SELECT * FROM users"
-	row, err := r.db.QueryContext(ctx, query)
+func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*UserFindResponse, error) {
+	var u UserFindResponse
+	var err error
+
+	query := `
+	SELECT
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $1::uuid IS NOT NULL AND uid = $1::uuid
+		) AS uid_exists,
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $2::text IS NOT NULL AND username = $2::text
+		) AS username_exists,
+		EXISTS (
+			SELECT 1 FROM users
+			WHERE $3::text IS NOT NULL AND email = $3::text
+		) AS email_exists;
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, req.UID, req.Username, req.Email).
+		Scan(&u.UIDExists, &u.UsernameExists, &u.EmailExists)
 
 	if err != nil {
-		return nil, fmt.Errorf("error getting all users: %w", err)
+		return nil, fmt.Errorf("error finding user: %w", err)
 	}
 
-	var users []User
-	for row.Next() {
-		var u User
-		if err := row.Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt); err != nil {
-			return nil, fmt.Errorf("error getting all users: %w", err)
-		}
-		users = append(users, u)
-	}
-
-	if err := row.Err(); err != nil {
-		return nil, fmt.Errorf("error getting all users: %w", err)
-	}
-
-	return users, nil
+	return &u, nil
 }
 
-func (r *RepositoryWithCache) GetByUID(ctx context.Context, uid string) (*User, error) {
+func (r *RepositoryWithCache) Authenticate(ctx context.Context, req *UserAuthRequest) (*string, error) {
+	var err error
+	var uid string
+
+	query := `
+		SELECT uid FROM users
+		WHERE 
+			$1::text IS NOT NULL 
+			AND email = $1::text
+			AND $2::text IS NOT NULL 
+			AND password_hash = $2::text
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, req.Email, req.PasswordHash).
+		Scan(&uid)
+
+	if err != nil {
+		return nil, fmt.Errorf("error authenticating user: %w", err)
+	}
+
+	return &uid, nil
+}
+
+func (r *RepositoryWithCache) Get(ctx context.Context, uid string) (*User, error) {
 	var u User
 	var err error
 
