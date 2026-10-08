@@ -3,9 +3,11 @@ package user
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
 	"github.com/redis/go-redis/v9"
@@ -16,8 +18,9 @@ const userKeyPrefix = "user"
 var logger = log.Default()
 
 type Repository interface {
-	Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error)
-	Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error)
+	Get(ctx context.Context, uid string) (*User, error)
+	Find(ctx context.Context, req *UserFindRequest) (*UserFindResponse, error)
+	Authenticate(ctx context.Context, req *UserAuthRequest) (*string, error)
 	Create(ctx context.Context, req *UserCreateRequest) (*User, error)
 	Delete(ctx context.Context, uid string) (*User, error)
 	Update(ctx context.Context, uid string, req *UserUpdateRequest) (*User, error)
@@ -58,8 +61,8 @@ func NewRepositoryWithCache(db *sql.DB, cache *redis.Client) *RepositoryWithCach
 	}
 }
 
-func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*UserFindResult, error) {
-	var u UserFindResult
+func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*UserFindResponse, error) {
+	var u UserFindResponse
 	var err error
 
 	query := `
@@ -89,31 +92,81 @@ func (r *RepositoryWithCache) Find(ctx context.Context, req *UserFindRequest) (*
 	return &u, nil
 }
 
-func (r *RepositoryWithCache) Authenticate(ctx context.Context, req *UserAuthRequest) (*bool, error) {
+func (r *RepositoryWithCache) Authenticate(ctx context.Context, req *UserAuthRequest) (*string, error) {
 	var err error
-	var res bool
+	var uid string
 
 	query := `
-	SELECT
-		EXISTS (
-			SELECT 1 FROM users
-			WHERE 
-				$1::text IS NOT NULL 
-				AND email = $1::text
-				AND $2::text IS NOT NULL 
-				AND password_hash = $2::text
-		)
+		SELECT uid FROM users
+		WHERE 
+			$1::text IS NOT NULL 
+			AND email = $1::text
+			AND $2::text IS NOT NULL 
+			AND password_hash = $2::text
 	`
 
 	err = r.db.
 		QueryRowContext(ctx, query, req.Email, req.PasswordHash).
-		Scan(&res)
+		Scan(&uid)
 
 	if err != nil {
 		return nil, fmt.Errorf("error authenticating user: %w", err)
 	}
 
-	return &res, nil
+	return &uid, nil
+}
+
+func (r *RepositoryWithCache) Get(ctx context.Context, uid string) (*User, error) {
+	var u User
+	var err error
+
+	userKey := fmt.Sprintf("%s:%s", userKeyPrefix, uid)
+	jsonUser, err := r.cache.Get(ctx, userKey).Result()
+
+	switch {
+	case err == nil:
+		if err := json.Unmarshal([]byte(jsonUser), &u); err != nil {
+			_ = r.cache.Del(ctx, userKey).Err()
+			break
+		}
+		return &u, nil
+
+	case errors.Is(err, redis.Nil):
+		// cache miss
+
+	default:
+		logger.Println("cache is unavailable")
+		break
+	}
+
+	query := `
+		SELECT uid, username, email, password_hash, created_at
+        FROM users
+        WHERE uid = $1
+	`
+
+	err = r.db.
+		QueryRowContext(ctx, query, uid).
+		Scan(&u.UID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.UserNotFound
+		}
+		return nil, fmt.Errorf("error getting user by uid: %w", err)
+	}
+
+	marshaledUser, err := json.Marshal(u)
+	if err != nil {
+		logger.Println("unable to put value to cache")
+		return &u, nil
+	}
+	err = r.cache.Set(ctx, userKey, string(marshaledUser), 10*time.Minute).Err()
+	if err != nil {
+		logger.Println("unable to put value to cache")
+	}
+
+	return &u, nil
 }
 
 func (r *RepositoryWithCache) Create(ctx context.Context, req *UserCreateRequest) (*User, error) {

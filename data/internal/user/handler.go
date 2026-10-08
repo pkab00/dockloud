@@ -54,15 +54,13 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := h.serv.Authenticate(ctx, &req)
+	user, err := h.serv.Authenticate(ctx, &req)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Authorisation Error", http.StatusUnauthorized)
 		return
 	}
-
-	if *success != true {
-		w.WriteHeader(http.StatusUnauthorized)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
