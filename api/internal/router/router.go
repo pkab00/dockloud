@@ -15,5 +15,6 @@ func RegisterRoutes(mux *http.ServeMux) {
 		authHandler = auth.NewHandler(authService)
 	)
 
-	mux.HandleFunc("POST /auth", authHandler.CreateUser)
+	mux.HandleFunc("POST /register", authHandler.Register)
+	mux.HandleFunc("POST /login", authHandler.Login)
 }

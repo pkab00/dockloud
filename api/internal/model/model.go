@@ -26,6 +26,12 @@ type UserFindResult struct {
 	EmailExists    bool `json:"email_exists"`
 }
 
+type AuthResult struct {
+	AccessToken string        `json:"access_token"`
+	TokenType   string        `json:"token_type"`
+	ExpiresIn   time.Duration `json:"expires_in"`
+}
+
 func (r *UserFindResult) UserExists() bool {
 	return r.UIDExists || r.UsernameExists || r.EmailExists
 }

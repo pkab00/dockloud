@@ -23,7 +23,7 @@ func NewHandler(serv *Service) *Handler {
 	}
 }
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req *ExternalCreateRequest
 	var err error
 
@@ -50,4 +50,27 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(u)
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req *ExternalAuthRequest
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.serv.AuthUser(ctx, req)
+	if err != nil {
+		logger.Printf("error: %v", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }

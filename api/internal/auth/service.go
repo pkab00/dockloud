@@ -44,15 +44,29 @@ func hashPassword(password string) string {
 	return signatureHex
 }
 
-func generateJWTToken(uid string) (string, error) {
+func generateJWTToken(uid string) (*model.AuthResult, error) {
+	created := time.Now()
+	expires := created.Add(time.Hour * 2)
+	issue := "dockloud-api"
+
 	claims := jwt.MapClaims{
-		"sub": uid,                            // идентификатор
-		"iss": "dockloud-api",                 // кем выдан
-		"iat": time.Now(),                     // когда выдан
-		"exp": time.Now().Add(time.Hour * 24), // когда истекает
+		"sub": uid,            // идентификатор
+		"iss": issue,          // кем выдан
+		"iat": created.Unix(), // когда выдан
+		"exp": expires.Unix(), // когда истекает
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	return token.SignedString(secretKey)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuthResult{
+		AccessToken: tokenString,
+		TokenType:   "Bearer",
+		ExpiresIn:   time.Until(expires),
+	}, nil
 }
 
 func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*model.User, error) {
@@ -85,7 +99,7 @@ func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*
 	return res, nil
 }
 
-func (s *Service) AuthUser(ctx context.Context, req *ExternalAuthRequest) (*string, error) {
+func (s *Service) AuthUser(ctx context.Context, req *ExternalAuthRequest) (*model.AuthResult, error) {
 	var err error
 
 	hashed := hashPassword(req.Password)
@@ -103,5 +117,5 @@ func (s *Service) AuthUser(ctx context.Context, req *ExternalAuthRequest) (*stri
 		return nil, err
 	}
 
-	return &token, nil // TODO
+	return token, nil
 }
