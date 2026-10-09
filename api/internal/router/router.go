@@ -8,9 +8,12 @@ import (
 )
 
 func RegisterRoutes(mux *http.ServeMux) {
-	var (
-		dataClient = data.NewClient("http://data:8081")
+	var dataClient, err = data.NewClient("http://data:8081")
+	if err != nil {
+		panic("Failed to initialize data client")
+	}
 
+	var (
 		authService = auth.NewService(dataClient)
 		authHandler = auth.NewHandler(authService)
 	)

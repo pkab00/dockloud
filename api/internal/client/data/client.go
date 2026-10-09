@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/api/internal/serviceauth"
 )
 
 type InternalCreateUserRequest struct {
@@ -52,13 +53,24 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(baseURL string) *Client {
+func NewClient(baseURL string) (*Client, error) {
+	token, err := serviceauth.GenerateToken()
+	if err != nil {
+		return nil, err
+	}
+
+	transport := &serviceauth.AuthTransport{
+		Base:  http.DefaultTransport,
+		Token: token,
+	}
+
 	return &Client{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 5 * time.Second,
+			Transport: transport,
+			Timeout:   5 * time.Second,
 		},
-	}
+	}, nil
 }
 
 // ========================== USERS ==========================
@@ -324,6 +336,9 @@ func (c *Client) CreateDocument(ctx context.Context, req *CreateDocumentRequest)
 		fmt.Sprintf("%s/documents", c.baseURL),
 		bytes.NewReader(body),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("client error: %w", err)
+	}
 
 	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
@@ -355,6 +370,9 @@ func (c *Client) UpdateDocument(ctx context.Context, id int, req *CreateDocument
 		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
 		bytes.NewReader(body),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("client error: %w", err)
+	}
 
 	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
@@ -381,6 +399,9 @@ func (c *Client) DeleteDocument(ctx context.Context, id int) (*model.Document, e
 		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
 		nil,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("client error: %w", err)
+	}
 
 	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
