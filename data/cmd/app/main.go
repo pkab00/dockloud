@@ -8,6 +8,7 @@ import (
 	"github.com/pkab00/dockloud/data"
 	"github.com/pkab00/dockloud/data/internal/cache"
 	"github.com/pkab00/dockloud/data/internal/database"
+	"github.com/pkab00/dockloud/data/internal/serviceauth"
 	"github.com/pkab00/dockloud/shared/middleware"
 )
 
@@ -24,7 +25,17 @@ func main() {
 	}
 	defer rd.Close()
 
+	verifier, err := serviceauth.NewVerifier(os.Getenv("API_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	mux := http.NewServeMux()
 	data.RegisterRoutes(db, rd, mux)
-	http.ListenAndServe(":8081", middleware.Logger(mux))
+	http.ListenAndServe(
+		":8081",
+		middleware.Logger(
+			serviceauth.Middleware(verifier)(mux),
+		),
+	)
 }
