@@ -21,33 +21,27 @@ func NewHandler(serv *Service) *Handler {
 	}
 }
 
-func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	documents, err := h.serv.GetAll(ctx)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	var documents []DocumentResponse
+	var err error
+	authorID := r.URL.Query().Get("author_id")
+	requesterId := r.URL.Query().Get("requester_id")
+
+	switch {
+	case authorID != "" && requesterId != "":
+		documents, err = h.serv.GetByAuthorID(ctx, authorID, requesterId)
+	case authorID == "" && requesterId != "":
+		documents, err = h.serv.GetAccessible(ctx, requesterId)
+	default:
+		http.Error(w, "Query Parameters Missing", http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(documents)
-}
-
-func (h *Handler) GetByUID(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
-	defer cancel()
-
-	uid := r.PathValue("uid")
-
-	documents, err := h.serv.GetByUID(ctx, uid)
 	if err != nil {
-		if errors.Is(err, apperrors.UserNotFound) {
-			http.Error(w, "No Such User Found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -59,13 +53,19 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	id, err := strconv.Atoi(r.PathValue("id"))
+	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	document, err := h.serv.GetByID(ctx, id)
+	requesterId := r.URL.Query().Get("requester_id")
+	if requesterId == "" {
+		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
+		return
+	}
+
+	document, err := h.serv.GetByID(ctx, documentID, requesterId)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
 			http.Error(w, "No Such Document Found", http.StatusNotFound)
@@ -110,13 +110,19 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	id, err := strconv.Atoi(r.PathValue("id"))
+	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	document, err := h.serv.Delete(ctx, id)
+	requesterId := r.URL.Query().Get("requester_id")
+	if requesterId == "" {
+		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
+		return
+	}
+
+	document, err := h.serv.Delete(ctx, documentID, requesterId)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
 			http.Error(w, "No Such Document Found", http.StatusNotFound)
@@ -136,9 +142,15 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	id, err := strconv.Atoi(r.PathValue("id"))
+	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	requesterId := r.URL.Query().Get("requester_id")
+	if requesterId == "" {
+		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
 		return
 	}
 
@@ -148,7 +160,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	document, err := h.serv.Update(ctx, id, &req)
+	document, err := h.serv.Update(ctx, documentID, requesterId, &req)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
 			http.Error(w, "No Such Document Found", http.StatusNotFound)
