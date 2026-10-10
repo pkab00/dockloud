@@ -30,6 +30,11 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [ data, api ]
+
     permissions:
       contents: read
       packages: write
@@ -48,12 +53,12 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --file data/Dockerfile \
+            --file ${{ matrix.service }}/Dockerfile \
             --tag ghcr.io/pkab00/dockloud-data:latest \
             .
 
       - name: Push Docker image
-        run: docker push ghcr.io/pkab00/dockloud-data:latest
+        run: docker push ghcr.io/pkab00/dockloud-${{ matrix.service }}:latest
 
   deploy:
     needs: build
