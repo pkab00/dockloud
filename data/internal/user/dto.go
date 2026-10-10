@@ -18,3 +18,12 @@ type UserFindResponse struct {
 func (r *UserFindResponse) UserExists() bool {
 	return r.UIDExists || r.UsernameExists || r.EmailExists
 }
+
+func (u *User) toResponse() *UserResponse {
+	return &UserResponse{
+		UID:       u.UID,
+		Username:  u.Username,
+		Email:     u.Email,
+		CreatedAt: u.CreatedAt,
+	}
+}

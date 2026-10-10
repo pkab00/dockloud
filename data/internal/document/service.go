@@ -20,39 +20,49 @@ func NewService(documentRepo Repository, userRepo user.Repository) *Service {
 	}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]Document, error) {
-	return s.documentRepo.GetAll(ctx)
-}
-
-func (s *Service) GetByUID(ctx context.Context, uid string) ([]Document, error) {
-	req := user.UserFindRequest{UID: &uid}
-	res, err := s.userRepo.Find(ctx, &req)
-	if err != nil || !res.UserExists() {
-		return nil, apperrors.UserNotFound
+func (s *Service) GetByAuthorID(ctx context.Context, authorID string, requesterID string) ([]DocumentResponse, error) {
+	var mapped []DocumentResponse
+	res, err := s.documentRepo.GetByAuthorID(ctx, authorID, requesterID)
+	for _, doc := range res {
+		mapped = append(mapped, *doc.toResponse())
 	}
-	return s.documentRepo.GetByUID(ctx, uid)
+	return mapped, err
 }
 
-func (s *Service) GetByID(ctx context.Context, id int) (*Document, error) {
-	return s.documentRepo.GetByID(ctx, id)
+func (s *Service) GetAccessible(ctx context.Context, uid string) ([]DocumentResponse, error) {
+	var mapped []DocumentResponse
+	res, err := s.documentRepo.GetAccessible(ctx, uid)
+	for _, doc := range res {
+		mapped = append(mapped, *doc.toResponse())
+	}
+	return mapped, err
 }
 
-func (s *Service) Create(ctx context.Context, req *DocumentCreateRequest) (*Document, error) {
+func (s *Service) GetByID(ctx context.Context, documentID int, requesterID string) (*DocumentResponse, error) {
+	res, err := s.documentRepo.GetByID(ctx, documentID, requesterID)
+	return res.toResponse(), err
+}
+
+func (s *Service) Create(ctx context.Context, req *DocumentCreateRequest) (*DocumentResponse, error) {
 	if strings.TrimSpace(req.Name) == "" {
 		return nil, apperrors.InvalidDocumentName
 	}
 
-	return s.documentRepo.Create(ctx, req)
+	res, err := s.documentRepo.Create(ctx, req)
+	return res.toResponse(), err
 }
 
-func (s *Service) Delete(ctx context.Context, id int) (*Document, error) {
-	return s.documentRepo.Delete(ctx, id)
+func (s *Service) Delete(ctx context.Context, documentID int, requesterID string) (*DocumentResponse, error) {
+	res, err := s.documentRepo.Delete(ctx, documentID, requesterID)
+	return res.toResponse(), err
 }
 
 func (s *Service) Update(
 	ctx context.Context,
-	id int,
+	documentID int,
+	requesterID string,
 	req *DocumentUpdateRequest,
-) (*Document, error) {
-	return s.documentRepo.Update(ctx, id, req)
+) (*DocumentResponse, error) {
+	res, err := s.documentRepo.Update(ctx, documentID, requesterID, req)
+	return res.toResponse(), err
 }
