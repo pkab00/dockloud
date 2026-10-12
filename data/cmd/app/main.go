@@ -32,7 +32,6 @@ func main() {
 
 	mux := http.NewServeMux()
 	router.RegisterRoutes(db, rd, mux)
-
 	http.ListenAndServe(
 		":8081",
 		middleware.Logger(

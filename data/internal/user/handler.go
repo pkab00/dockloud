@@ -8,6 +8,7 @@ import (
 	"time"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
+	"github.com/pkab00/dockloud/shared/contract"
 )
 
 type Handler struct {
@@ -27,13 +28,27 @@ func (h *Handler) Find(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteBadRequestErrorAsJSON(w)
 		return
 	}
 
 	res, err := h.serv.Find(ctx, &req)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if errors.Is(err, apperrors.UserNotFound) {
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrUserNotFound,
+				"No matching users find by the search request.",
+			)
+		} else {
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrUserSearchFailed,
+				"An error occured while searching for users.",
+			)
+		}
 		return
 	}
 
@@ -48,18 +63,25 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
+	w.Header().Set("Content-Type", "application/json")
+
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteBadRequestErrorAsJSON(w)
 		return
 	}
 
 	user, err := h.serv.Authenticate(ctx, &req)
 	if err != nil {
-		http.Error(w, "Authorisation Error", http.StatusUnauthorized)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusUnauthorized,
+			contract.ErrAuthorizationFailed,
+			"Authorization failed. Please check your log in data.",
+		)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -72,18 +94,48 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteBadRequestErrorAsJSON(w)
 		return
 	}
 
 	user, err := h.serv.Create(ctx, &req)
 	if err != nil {
-		if errors.Is(err, apperrors.InavalidNickname) {
-			http.Error(w, "Invalid Nickname", http.StatusBadRequest)
-		} else if errors.Is(err, apperrors.InvalidEmail) {
-			http.Error(w, "Invalid Email Format", http.StatusBadRequest)
-		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, apperrors.InavalidUsername):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusBadRequest,
+				contract.ErrInvalidUsername,
+				"Username is invalid. Please make sure that it contains less than 50 symbols.",
+			)
+		case errors.Is(err, apperrors.InvalidEmail):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusBadRequest,
+				contract.ErrInvalidEmail,
+				"Invalid or unsupported email format. Please fix your input and try again.",
+			)
+		case errors.Is(err, apperrors.UsernameAlreadyInUse):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusConflict,
+				contract.ErrUsernameTaken,
+				"Username is already in use. Please change it and try again.",
+			)
+		case errors.Is(err, apperrors.EmailAlreadyInUse):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusConflict,
+				contract.ErrEmailTaken,
+				"Email is already in use. Please change it and try again.",
+			)
+		default:
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrRegistrationFailed,
+				"Unknown registration error.",
+			)
 		}
 		return
 	}
@@ -102,9 +154,19 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	user, err := h.serv.Delete(ctx, uid)
 	if err != nil {
 		if errors.Is(err, apperrors.UserNotFound) {
-			http.Error(w, "No Such User Found", http.StatusNotFound)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrUserNotFound,
+				"No users found with such uid",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error trying to delete user.",
+			)
 		}
 		return
 	}
@@ -123,16 +185,26 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	uid := r.PathValue("uid")
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteBadRequestErrorAsJSON(w)
 		return
 	}
 
 	user, err := h.serv.Update(ctx, uid, &req)
 	if err != nil {
 		if errors.Is(err, apperrors.UserNotFound) {
-			http.Error(w, "No Such User Found", http.StatusNotFound)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrUserNotFound,
+				"No users found with such uid.",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error trying to delete user.",
+			)
 		}
 		return
 	}
