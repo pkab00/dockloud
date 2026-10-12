@@ -2,6 +2,8 @@ package user
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"net/mail"
 	"strings"
 
@@ -27,7 +29,11 @@ func NewService(userRepo Repository) *Service {
 }
 
 func (s *Service) Find(ctx context.Context, req *UserFindRequest) (*UserFindResponse, error) {
-	return s.userRepo.Find(ctx, req)
+	res, err := s.userRepo.Find(ctx, req)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, apperrors.UserNotFound
+	}
+	return res, err
 }
 
 func (s *Service) Authenticate(ctx context.Context, req *UserAuthRequest) (*UserResponse, error) {
@@ -47,10 +53,27 @@ func (s *Service) Authenticate(ctx context.Context, req *UserAuthRequest) (*User
 }
 
 func (s *Service) Create(ctx context.Context, req *UserCreateRequest) (*UserResponse, error) {
+	var err error
+
 	if !isValidUsername(req.Username) {
-		return nil, apperrors.InavalidNickname
+		return nil, apperrors.InavalidUsername
 	} else if !isValidEmail(req.Email) {
 		return nil, apperrors.InvalidEmail
+	}
+
+	findRes, err := s.userRepo.Find(ctx, &UserFindRequest{
+		Username: &req.Username,
+		Email:    &req.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case findRes.UsernameExists:
+		return nil, apperrors.UsernameAlreadyInUse
+	case findRes.EmailExists:
+		return nil, apperrors.EmailAlreadyInUse
 	}
 
 	u, err := s.userRepo.Create(ctx, req)
