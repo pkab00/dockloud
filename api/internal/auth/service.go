@@ -77,13 +77,16 @@ func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*
 		Email:    &req.Email,
 	})
 	if err != nil {
+		logger.Printf("CreateUser: %v", err)
 		return nil, err
 	}
 
 	switch {
 	case findRes.UsernameExists:
+		logger.Printf("CreateUser: %v", err)
 		return nil, apperror.UsernameInUse
 	case findRes.EmailExists:
+		logger.Printf("CreateUser: %v", err)
 		return nil, apperror.EmailInUse
 	}
 
@@ -93,6 +96,7 @@ func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*
 		PasswordHash: hashPassword(req.Password),
 	})
 	if err != nil {
+		logger.Printf("CreateUser: %v", err)
 		return nil, err
 	}
 
