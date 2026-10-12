@@ -9,6 +9,7 @@ import (
 	"time"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
+	"github.com/pkab00/dockloud/shared/contract"
 )
 
 type Handler struct {
@@ -36,12 +37,22 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	case authorID == "" && requesterId != "":
 		documents, err = h.serv.GetAccessible(ctx, requesterId)
 	default:
-		http.Error(w, "Query Parameters Missing", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrQueryParamsMissing,
+			"Query parameters missing for get request. Please specify author_id, requester_id, or both.",
+		)
 		return
 	}
 
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusInternalServerError,
+			contract.ErrInternal,
+			"Error requesting documents.",
+		)
 		return
 	}
 
@@ -55,22 +66,42 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrInvalidDocumentID,
+			"Bad request. Passed invalid document ID.",
+		)
 		return
 	}
 
 	requesterId := r.URL.Query().Get("requester_id")
 	if requesterId == "" {
-		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrReqesterIDMissing,
+			"Requester ID missing. Make sure to pass it using query parameters.",
+		)
 		return
 	}
 
 	document, err := h.serv.GetByID(ctx, documentID, requesterId)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
-			http.Error(w, "No Such Document Found", http.StatusNotFound)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error requesting documents.",
+			)
 		}
 		return
 	}
@@ -87,16 +118,31 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad create request. Failed to create a document.",
+		)
 		return
 	}
 
 	document, err := h.serv.Create(ctx, &req)
 	if err != nil {
 		if errors.Is(err, apperrors.InvalidDocumentName) {
-			http.Error(w, "Invalid Document Name", http.StatusBadRequest)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusBadRequest,
+				contract.ErrInvalidDocumentName,
+				"Invalid document name. Make sure you passed a correct string.",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error creating a document.",
+			)
 		}
 		return
 	}
@@ -112,22 +158,42 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad delete request. Failed to delete a document.",
+		)
 		return
 	}
 
 	requesterId := r.URL.Query().Get("requester_id")
 	if requesterId == "" {
-		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrReqesterIDMissing,
+			"Requester ID missing. Make sure to pass it using query parameters.",
+		)
 		return
 	}
 
 	document, err := h.serv.Delete(ctx, documentID, requesterId)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
-			http.Error(w, "No Such Document Found", http.StatusNotFound)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error deleting a document.",
+			)
 		}
 		return
 	}
@@ -144,28 +210,53 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	documentID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad update request. Failed to update a document.",
+		)
 		return
 	}
 
 	requesterId := r.URL.Query().Get("requester_id")
 	if requesterId == "" {
-		http.Error(w, "Requester ID Missing", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrReqesterIDMissing,
+			"Requester ID missing. Make sure to pass it using query parameters.",
+		)
 		return
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad update request. Failed to update a document.",
+		)
 		return
 	}
 
 	document, err := h.serv.Update(ctx, documentID, requesterId, &req)
 	if err != nil {
 		if errors.Is(err, apperrors.DocumentNotFound) {
-			http.Error(w, "No Such Document Found", http.StatusNotFound)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
 		} else {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error updating a document.",
+			)
 		}
 		return
 	}
