@@ -37,6 +37,10 @@ func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	)
 	mux.Handle(
 		"GET /documents",
-		middleware.Auth(verifier)(http.HandlerFunc(docHandler.GetAll)),
+		middleware.Auth(verifier)(http.HandlerFunc(docHandler.Get)),
+	)
+	mux.Handle(
+		"DELETE /documents/{id}",
+		middleware.Auth(verifier)(http.HandlerFunc(docHandler.Delete)),
 	)
 }

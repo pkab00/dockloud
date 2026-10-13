@@ -327,7 +327,7 @@ func (c *Client) GetDocumentsByAuthor(ctx context.Context, reqID string, authID 
 	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/documents/user?requester_id=%s&author_id=%s", c.baseURL, reqID, authID),
+		fmt.Sprintf("%s/documents?requester_id=%s&author_id=%s", c.baseURL, reqID, authID),
 		nil,
 	)
 	if err != nil {
@@ -453,11 +453,11 @@ func (c *Client) UpdateDocument(ctx context.Context, id int, inReq *UpdateDocume
 	return &document, nil
 }
 
-func (c *Client) DeleteDocument(ctx context.Context, id int) (*model.Document, error) {
+func (c *Client) DeleteDocument(ctx context.Context, docID int, reqID string) (*model.Document, error) {
 	req, err := c.newRequest(
 		ctx,
 		http.MethodDelete,
-		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
+		fmt.Sprintf("%s/documents/%d?requester_id=%s", c.baseURL, docID, reqID),
 		nil,
 	)
 	if err != nil {

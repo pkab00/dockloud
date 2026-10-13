@@ -15,7 +15,6 @@ type Document struct {
 	Name      string    `json:"name"`
 	Content   string    `json:"content"`
 	IsPrivate bool      `json:"is_private"`
-	IsDeleted bool      `json:"is_deleted"`
 	CreatedAt time.Time `json:"created_at"`
 	EditedAt  time.Time `json:"edited_at"`
 }
