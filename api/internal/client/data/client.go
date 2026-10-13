@@ -5,11 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"time"
 
+	apperror "github.com/pkab00/dockloud/api/internal/error"
 	"github.com/pkab00/dockloud/api/internal/model"
 	"github.com/pkab00/dockloud/api/internal/serviceauth"
+	"github.com/pkab00/dockloud/shared/contract"
 )
 
 type InternalCreateUserRequest struct {
@@ -73,347 +77,402 @@ func NewClient(baseURL string) (*Client, error) {
 	}, nil
 }
 
+func checkResponseStatus(resp *http.Response, expectedStatus int) error {
+	if resp.StatusCode == expectedStatus {
+		return nil
+	}
+
+	var apiErr contract.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
+		return fmt.Errorf(
+			"data service returned status %d; failed to decode error response: %w",
+			resp.StatusCode,
+			err,
+		)
+	}
+
+	return &apperror.ClientError{
+		Status:  resp.StatusCode,
+		Code:    apiErr.Code,
+		Message: apiErr.Message,
+	}
+}
+
+func marshalRequestBody(v any) (*bytes.Reader, error) {
+	body, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("marshal data service request: %w", err)
+	}
+	return bytes.NewReader(body), nil
+}
+
+func (c *Client) newRequest(
+	ctx context.Context,
+	method string,
+	url string,
+	body io.Reader,
+) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, fmt.Errorf("create data service request: %w", err)
+	}
+	return req, nil
+}
+
 // ========================== USERS ==========================
 
 func (c *Client) FindUser(ctx context.Context, req *FindUserRequest) (*model.UserFindResult, error) {
-	var u *model.UserFindResult
-	var err error
-
-	body, err := json.Marshal(req)
+	body, err := marshalRequestBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	dataReq, err := http.NewRequestWithContext(
+	dataReq, err := c.newRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/users/find", c.baseURL),
-		bytes.NewReader(body),
+		body,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send find user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var result model.UserFindResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decode find user response: %w", err)
 	}
-	return u, nil
+
+	return &result, nil
 }
 
 func (c *Client) AuthUser(ctx context.Context, req *InternalAuthUserRequest) (*model.User, error) {
-	var err error
-	var user model.User
-
-	body, err := json.Marshal(req)
+	body, err := marshalRequestBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	dataReq, err := http.NewRequestWithContext(
+	dataReq, err := c.newRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/users/auth", c.baseURL),
-		bytes.NewReader(body),
+		body,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(dataReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send authenticate user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
+		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+	var user model.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, fmt.Errorf("decode authenticate user response: %w", err)
 	}
+
 	return &user, nil
 }
 
 func (c *Client) CreateUser(ctx context.Context, inReq *InternalCreateUserRequest) (*model.User, error) {
-	var u *model.User
-	var err error
-
-	body, err := json.Marshal(inReq)
+	body, err := marshalRequestBody(inReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodPost,
 		fmt.Sprintf("%s/users", c.baseURL),
-		bytes.NewReader(body),
+		body,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send create user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusCreated); err != nil {
+		log.Default().Printf("data client: %v", err)
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var user model.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, fmt.Errorf("decode create user response: %w", err)
 	}
-	return u, nil
+
+	return &user, nil
 }
 
 func (c *Client) UpdateUser(ctx context.Context, uid string, inReq *InternalUpdateUserRequest) (*model.User, error) {
-	var u *model.User
-	var err error
-
-	body, err := json.Marshal(inReq)
+	body, err := marshalRequestBody(inReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodPatch,
 		fmt.Sprintf("%s/users/%s", c.baseURL, uid),
-		bytes.NewReader(body),
+		body,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send update user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var user model.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, fmt.Errorf("decode update user response: %w", err)
 	}
-	return u, nil
+
+	return &user, nil
 }
 
 func (c *Client) DeleteUser(ctx context.Context, uid string) (*model.User, error) {
-	var u *model.User
-	var err error
-
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("%s/users/%s", c.baseURL, uid),
 		nil,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send delete user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var user model.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, fmt.Errorf("decode delete user response: %w", err)
 	}
-	return u, nil
+
+	return &user, nil
 }
 
 // ========================== DOCUMENTS ==========================
 
 func (c *Client) GetAllDocuments(ctx context.Context) ([]model.Document, error) {
-	var d []model.Document
-	var err error
-
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/documents", c.baseURL),
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send get all documents request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var documents []model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&documents); err != nil {
+		return nil, fmt.Errorf("decode get all documents response: %w", err)
 	}
-	return d, nil
+
+	return documents, nil
 }
 
 func (c *Client) GetDocumentsByUID(ctx context.Context, uid string) ([]model.Document, error) {
-	var d []model.Document
-	var err error
-
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/documents/user/%s", c.baseURL, uid),
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send get documents by user request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var documents []model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&documents); err != nil {
+		return nil, fmt.Errorf("decode get documents by user response: %w", err)
 	}
-	return d, nil
+
+	return documents, nil
 }
 
 func (c *Client) GetDocumentByID(ctx context.Context, id int) (*model.Document, error) {
-	var d *model.Document
-	var err error
-
-	req, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send get document request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode get document response: %w", err)
 	}
-	return d, nil
+
+	return &document, nil
 }
 
-func (c *Client) CreateDocument(ctx context.Context, req *CreateDocumentRequest) (*model.Document, error) {
-	var d *model.Document
-	var err error
-
-	body, err := json.Marshal(req)
+func (c *Client) CreateDocument(ctx context.Context, inReq *CreateDocumentRequest) (*model.Document, error) {
+	body, err := marshalRequestBody(inReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	dataReq, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodPost,
 		fmt.Sprintf("%s/documents", c.baseURL),
-		bytes.NewReader(body),
+		body,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(dataReq)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send create document request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusCreated); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode create document response: %w", err)
 	}
-	return d, nil
+
+	return &document, nil
 }
 
-func (c *Client) UpdateDocument(ctx context.Context, id int, req *CreateDocumentRequest) (*model.Document, error) {
-	var d *model.Document
-	var err error
-
-	body, err := json.Marshal(req)
+func (c *Client) UpdateDocument(ctx context.Context, id int, inReq *UpdateDocumentRequest) (*model.Document, error) {
+	body, err := marshalRequestBody(inReq)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	dataReq, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodPatch,
 		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
-		bytes.NewReader(body),
+		body,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(dataReq)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send update document request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode update document response: %w", err)
 	}
-	return d, nil
+
+	return &document, nil
 }
 
 func (c *Client) DeleteDocument(ctx context.Context, id int) (*model.Document, error) {
-	var d *model.Document
-	var err error
-
-	dataReq, err := http.NewRequestWithContext(
+	req, err := c.newRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(dataReq)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+		return nil, fmt.Errorf("send delete document request to data service: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		return nil, fmt.Errorf("client error: %w", err)
+	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("client returned status %d", resp.StatusCode)
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode delete document response: %w", err)
 	}
-	return d, nil
+
+	return &document, nil
 }

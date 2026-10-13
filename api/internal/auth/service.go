@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/pkab00/dockloud/api/internal/client/data"
-	apperror "github.com/pkab00/dockloud/api/internal/error"
 	"github.com/pkab00/dockloud/api/internal/model"
 )
 
@@ -72,31 +71,13 @@ func generateJWTToken(uid string) (*model.AuthResult, error) {
 func (s *Service) CreateUser(ctx context.Context, req *ExternalCreateRequest) (*model.User, error) {
 	var err error
 
-	findRes, err := s.client.FindUser(ctx, &data.FindUserRequest{
-		Username: &req.Username,
-		Email:    &req.Email,
-	})
-	if err != nil {
-		logger.Printf("CreateUser: %v", err)
-		return nil, err
-	}
-
-	switch {
-	case findRes.UsernameExists:
-		logger.Printf("CreateUser: %v", err)
-		return nil, apperror.UsernameInUse
-	case findRes.EmailExists:
-		logger.Printf("CreateUser: %v", err)
-		return nil, apperror.EmailInUse
-	}
-
 	res, err := s.client.CreateUser(ctx, &data.InternalCreateUserRequest{
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: hashPassword(req.Password),
 	})
+
 	if err != nil {
-		logger.Printf("CreateUser: %v", err)
 		return nil, err
 	}
 

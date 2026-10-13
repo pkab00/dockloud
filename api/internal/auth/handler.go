@@ -31,20 +31,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		apperror.WriteBadRequestError(w)
 		return
 	}
 
 	u, err := h.serv.CreateUser(ctx, req)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.UsernameInUse):
-			http.Error(w, "Username Already In Use", http.StatusBadRequest)
-		case errors.Is(err, apperror.EmailInUse):
-			http.Error(w, "Email Already In Use", http.StatusBadRequest)
-		default:
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		var clientErr *apperror.ClientError
+		if errors.As(err, &clientErr) {
+			apperror.WriteClientError(w, *clientErr)
+		} else {
+			apperror.WriteUnknownError(w)
 		}
+
 		return
 	}
 
@@ -60,14 +59,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		apperror.WriteBadRequestError(w)
 		return
 	}
 
 	res, err := h.serv.AuthUser(ctx, req)
 	if err != nil {
-		logger.Printf("error: %v", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		var clientErr *apperror.ClientError
+		if errors.As(err, &clientErr) {
+			apperror.WriteClientError(w, *clientErr)
+		} else {
+			apperror.WriteUnknownError(w)
+		}
+
 		return
 	}
 
