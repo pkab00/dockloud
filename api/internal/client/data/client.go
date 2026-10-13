@@ -39,7 +39,7 @@ type FindUserRequest struct {
 	Email    *string `json:"email"`
 }
 
-type CreateDocumentRequest struct {
+type InternalCreateDocumentRequest struct {
 	OwnerID   string `json:"owner_id"`
 	Name      string `json:"name"`
 	Content   string `json:"content"`
@@ -293,11 +293,11 @@ func (c *Client) DeleteUser(ctx context.Context, uid string) (*model.User, error
 
 // ========================== DOCUMENTS ==========================
 
-func (c *Client) GetAllDocuments(ctx context.Context) ([]model.Document, error) {
+func (c *Client) GetAllDocuments(ctx context.Context, reqID string) ([]model.Document, error) {
 	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/documents", c.baseURL),
+		fmt.Sprintf("%s/documents?requester_id=%s", c.baseURL, reqID),
 		nil,
 	)
 	if err != nil {
@@ -311,6 +311,7 @@ func (c *Client) GetAllDocuments(ctx context.Context) ([]model.Document, error) 
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 
@@ -322,11 +323,11 @@ func (c *Client) GetAllDocuments(ctx context.Context) ([]model.Document, error) 
 	return documents, nil
 }
 
-func (c *Client) GetDocumentsByUID(ctx context.Context, uid string) ([]model.Document, error) {
+func (c *Client) GetDocumentsByAuthor(ctx context.Context, reqID string, authID string) ([]model.Document, error) {
 	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/documents/user/%s", c.baseURL, uid),
+		fmt.Sprintf("%s/documents/user?requester_id=%s&author_id=%s", c.baseURL, reqID, authID),
 		nil,
 	)
 	if err != nil {
@@ -340,6 +341,7 @@ func (c *Client) GetDocumentsByUID(ctx context.Context, uid string) ([]model.Doc
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 
@@ -351,11 +353,11 @@ func (c *Client) GetDocumentsByUID(ctx context.Context, uid string) ([]model.Doc
 	return documents, nil
 }
 
-func (c *Client) GetDocumentByID(ctx context.Context, id int) (*model.Document, error) {
+func (c *Client) GetDocumentByID(ctx context.Context, docID int, reqID string) (*model.Document, error) {
 	req, err := c.newRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
+		fmt.Sprintf("%s/documents/%d?requester_id=%s", c.baseURL, docID, reqID),
 		nil,
 	)
 	if err != nil {
@@ -369,6 +371,7 @@ func (c *Client) GetDocumentByID(ctx context.Context, id int) (*model.Document, 
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 
@@ -380,7 +383,7 @@ func (c *Client) GetDocumentByID(ctx context.Context, id int) (*model.Document, 
 	return &document, nil
 }
 
-func (c *Client) CreateDocument(ctx context.Context, inReq *CreateDocumentRequest) (*model.Document, error) {
+func (c *Client) CreateDocument(ctx context.Context, inReq *InternalCreateDocumentRequest) (*model.Document, error) {
 	body, err := marshalRequestBody(inReq)
 	if err != nil {
 		return nil, err
@@ -389,7 +392,7 @@ func (c *Client) CreateDocument(ctx context.Context, inReq *CreateDocumentReques
 	req, err := c.newRequest(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/documents", c.baseURL),
+		fmt.Sprintf("%s/documents?requester_id=%s", c.baseURL, inReq.OwnerID),
 		body,
 	)
 	if err != nil {
@@ -403,6 +406,7 @@ func (c *Client) CreateDocument(ctx context.Context, inReq *CreateDocumentReques
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusCreated); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 
@@ -437,6 +441,7 @@ func (c *Client) UpdateDocument(ctx context.Context, id int, inReq *UpdateDocume
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 
@@ -466,6 +471,7 @@ func (c *Client) DeleteDocument(ctx context.Context, id int) (*model.Document, e
 	defer resp.Body.Close()
 
 	if err := checkResponseStatus(resp, http.StatusOK); err != nil {
+		log.Default().Printf("data client: %v", err)
 		return nil, err
 	}
 

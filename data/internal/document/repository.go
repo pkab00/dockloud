@@ -62,7 +62,7 @@ func (r *RepositoryWithCache) GetByAuthorID(
 	query = `
 		SELECT id, owner_id, name, content, is_private, is_deleted, created_at, edited_at
 		FROM documents
-		WHERE (owner_id = $1) AND (owner_id = $2 OR is_private = 0)
+		WHERE (owner_id = $1) AND (owner_id = $2 OR is_private = FALSE)
 		AND is_deleted = FALSE
 	`
 
@@ -107,7 +107,7 @@ func (r *RepositoryWithCache) GetAccessible(ctx context.Context, uid string) ([]
 	query = `
 		SELECT id, owner_id, name, content, is_private, is_deleted, created_at, edited_at
 		FROM documents
-		WHERE (owner_id = $1 OR is_private = 0)
+		WHERE (owner_id = $1 OR is_private = FALSE)
 		AND is_deleted = FALSE
 	`
 

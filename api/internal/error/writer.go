@@ -63,6 +63,41 @@ func WriteClientError(w http.ResponseWriter, err ClientError) {
 			err.Code,
 			"Failed to log in. Please check the data you provided and try again.",
 		)
+	case contract.ErrUserNotFound:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"No existing users found by request.",
+		)
+	case contract.ErrUserSearchFailed:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Failed to find user.",
+		)
+	case contract.ErrDocumentNotFound:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"No existing documents found by request.",
+		)
+	case contract.ErrInvalidDocumentID:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Invalid document ID passed. Please fix your request and try again.",
+		)
+	case contract.ErrInvalidDocumentName:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Unsupported document name. Please fix your request and try again.",
+		)
 	default:
 		contract.WriteErrorAsJSON(
 			w,
