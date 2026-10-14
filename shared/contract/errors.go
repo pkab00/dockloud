@@ -49,7 +49,6 @@ const (
 	ErrRegistrationFailed  = "REGISTRATION_ERROR"
 
 	ErrDocumentNotFound    = "DOCUMENT_NOT_FOUND"
-	ErrAccessDeclined      = "ACCESS_DECLINED"
 	ErrInvalidDocumentName = "INVALID_DOCUMENT_NAME"
 	ErrInvalidDocumentID   = "INVALID_DOCUMENT_ID"
 )

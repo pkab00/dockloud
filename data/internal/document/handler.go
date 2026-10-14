@@ -100,8 +100,8 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusForbidden,
-				contract.ErrAccessDeclined,
-				"You have no rights to access this document.",
+				contract.ErrDocumentNotFound,
+				"No such document found.",
 			)
 		default:
 			logger.Printf("%v", err)
@@ -201,8 +201,8 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusForbidden,
-				contract.ErrAccessDeclined,
-				"You have no rights to access this document.",
+				contract.ErrDocumentNotFound,
+				"No such document found.",
 			)
 		default:
 			logger.Printf("%v", err)
@@ -273,8 +273,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusForbidden,
-				contract.ErrAccessDeclined,
-				"You have no rights to access this document.",
+				contract.ErrDocumentNotFound,
+				"No such document found.",
 			)
 		default:
 			logger.Printf("%v", err)

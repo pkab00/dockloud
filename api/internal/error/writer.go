@@ -98,13 +98,6 @@ func WriteClientError(w http.ResponseWriter, err ClientError) {
 			err.Code,
 			"Unsupported document name. Please fix your request and try again.",
 		)
-	case contract.ErrAccessDeclined:
-		contract.WriteErrorAsJSON(
-			w,
-			err.Status,
-			err.Code,
-			"Access declined. You have no rights to access this document.",
-		)
 	default:
 		contract.WriteErrorAsJSON(
 			w,
