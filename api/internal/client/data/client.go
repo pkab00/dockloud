@@ -418,7 +418,7 @@ func (c *Client) CreateDocument(ctx context.Context, inReq *InternalCreateDocume
 	return &document, nil
 }
 
-func (c *Client) UpdateDocument(ctx context.Context, id int, inReq *UpdateDocumentRequest) (*model.Document, error) {
+func (c *Client) UpdateDocument(ctx context.Context, docID int, reqID string, inReq *UpdateDocumentRequest) (*model.Document, error) {
 	body, err := marshalRequestBody(inReq)
 	if err != nil {
 		return nil, err
@@ -427,7 +427,7 @@ func (c *Client) UpdateDocument(ctx context.Context, id int, inReq *UpdateDocume
 	req, err := c.newRequest(
 		ctx,
 		http.MethodPatch,
-		fmt.Sprintf("%s/documents/%d", c.baseURL, id),
+		fmt.Sprintf("%s/documents/%d?requester_id=%s", c.baseURL, docID, reqID),
 		body,
 	)
 	if err != nil {

@@ -58,6 +58,21 @@ func (s *Service) Create(ctx context.Context, userReq ExternalCreateDocumentRequ
 	return doc, nil
 }
 
+func (s *Service) Update(ctx context.Context, docID int, userReq *data.UpdateDocumentRequest) (*model.Document, error) {
+	var err error
+
+	reqID, err := getRequesterID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.client.UpdateDocument(ctx, docID, *reqID, userReq)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
 func (s *Service) GetAll(ctx context.Context) ([]model.Document, error) {
 	var err error
 
@@ -86,6 +101,21 @@ func (s *Service) GetByAuthor(ctx context.Context, authID string) ([]model.Docum
 		return nil, err
 	}
 	return docs, nil
+}
+
+func (s *Service) GetByID(ctx context.Context, docID int) (*model.Document, error) {
+	var err error
+
+	reqID, err := getRequesterID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.client.GetDocumentByID(ctx, docID, *reqID)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
 }
 
 func (s *Service) Delete(ctx context.Context, docID int) (*model.Document, error) {
