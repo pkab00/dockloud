@@ -54,7 +54,7 @@ jobs:
         run: |
           docker build \
             --file ${{ matrix.service }}/Dockerfile \
-            --tag ghcr.io/pkab00/dockloud-data:latest \
+            --tag ghcr.io/pkab00/dockloud-${{ matrix.service }}:latest \
             .
 
       - name: Push Docker image
