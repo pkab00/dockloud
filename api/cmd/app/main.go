@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+	"os"
+
+	"github.com/pkab00/dockloud/api/internal/router"
+	"github.com/pkab00/dockloud/shared/middleware"
+)
 
 func main() {
-	fmt.Println("Hello Dockloud")
+	JWTsecret := os.Getenv("JWT_KEY")
+	mux := http.NewServeMux()
+
+	router.RegisterRoutes(mux, JWTsecret)
+	http.ListenAndServe(":8080", middleware.Logger(mux))
 }

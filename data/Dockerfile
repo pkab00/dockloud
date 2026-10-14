@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
+RUN apk add --no-cache wget
 
 COPY . .
 
@@ -15,6 +16,6 @@ WORKDIR /app
 
 COPY --from=builder /app/data-bin ./
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["./data-bin"]

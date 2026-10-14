@@ -62,7 +62,7 @@ func (r *RepositoryWithCache) GetByAuthorID(
 	query = `
 		SELECT id, owner_id, name, content, is_private, is_deleted, created_at, edited_at
 		FROM documents
-		WHERE (owner_id = $1) AND (owner_id = $2 OR is_private = 0)
+		WHERE (owner_id = $1) AND (owner_id = $2 OR is_private = FALSE)
 		AND is_deleted = FALSE
 	`
 
@@ -107,7 +107,7 @@ func (r *RepositoryWithCache) GetAccessible(ctx context.Context, uid string) ([]
 	query = `
 		SELECT id, owner_id, name, content, is_private, is_deleted, created_at, edited_at
 		FROM documents
-		WHERE (owner_id = $1 OR is_private = 0)
+		WHERE (owner_id = $1 OR is_private = FALSE)
 		AND is_deleted = FALSE
 	`
 
@@ -160,8 +160,6 @@ func (r *RepositoryWithCache) GetByID(ctx context.Context, documentID int, reque
 			break
 		}
 
-		return &d, nil
-
 	case errors.Is(err, redis.Nil):
 		// cache miss
 
@@ -197,28 +195,28 @@ func (r *RepositoryWithCache) GetByID(ctx context.Context, documentID int, reque
 		return nil, fmt.Errorf("error getting document by id: %w", err)
 	}
 
-	if d.IsPrivate || d.OwnerID != requesterID {
+	if !d.IsPrivate || d.OwnerID == requesterID {
+		marshaledDocument, err := json.Marshal(d)
+		if err != nil {
+			logger.Println("unable to put value to cache")
+			return &d, nil
+		}
+
+		err = r.cache.Set(
+			ctx,
+			documentKey,
+			string(marshaledDocument),
+			10*time.Minute,
+		).Err()
+
+		if err != nil {
+			logger.Println("unable to put value to cache")
+		}
+
+		return &d, nil
+	} else {
 		return nil, apperrors.AccessDeclined
 	}
-
-	marshaledDocument, err := json.Marshal(d)
-	if err != nil {
-		logger.Println("unable to put value to cache")
-		return &d, nil
-	}
-
-	err = r.cache.Set(
-		ctx,
-		documentKey,
-		string(marshaledDocument),
-		10*time.Minute,
-	).Err()
-
-	if err != nil {
-		logger.Println("unable to put value to cache")
-	}
-
-	return &d, nil
 }
 
 func (r *RepositoryWithCache) Create(ctx context.Context, req *DocumentCreateRequest) (*Document, error) {
@@ -330,6 +328,7 @@ func (r *RepositoryWithCache) Update(
 			req.Content,
 			req.IsPrivate,
 			documentID,
+			requesterID,
 		).
 		Scan(
 			&d.ID,

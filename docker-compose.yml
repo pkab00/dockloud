@@ -47,7 +47,7 @@ services:
     image: ghcr.io/pkab00/dockloud-data:latest
     container_name: dockloud-data
     ports:
-      - "8081:8081"
+      - "8081"
     environment:
       API_SERVICE_KEY: ${API_SERVICE_KEY}
       POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
@@ -55,6 +55,24 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  api:
+    image: ghcr.io/pkab00/dockloud-api:latest
+    container_name: dockloud-api
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_KEY: ${JWT_KEY}
+      API_SERVICE_KEY: ${API_SERVICE_KEY}
+    depends_on:
+      data:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -4,6 +4,8 @@ go 1.26.8
 
 require github.com/redis/go-redis/v9 v9.22.0
 
+require github.com/golang-jwt/jwt v3.2.2+incompatible
+
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1

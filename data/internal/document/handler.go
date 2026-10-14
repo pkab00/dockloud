@@ -88,19 +88,28 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	document, err := h.serv.GetByID(ctx, documentID, requesterId)
 	if err != nil {
-		if errors.Is(err, apperrors.DocumentNotFound) {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusNotFound,
 				contract.ErrDocumentNotFound,
 				"No such document found.",
 			)
-		} else {
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusInternalServerError,
 				contract.ErrInternal,
-				"Error requesting documents.",
+				"Error requesting a document.",
 			)
 		}
 		return
@@ -180,14 +189,23 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	document, err := h.serv.Delete(ctx, documentID, requesterId)
 	if err != nil {
-		if errors.Is(err, apperrors.DocumentNotFound) {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusNotFound,
 				contract.ErrDocumentNotFound,
 				"No such document found.",
 			)
-		} else {
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusInternalServerError,
@@ -243,14 +261,23 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	document, err := h.serv.Update(ctx, documentID, requesterId, &req)
 	if err != nil {
-		if errors.Is(err, apperrors.DocumentNotFound) {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusNotFound,
 				contract.ErrDocumentNotFound,
 				"No such document found.",
 			)
-		} else {
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
 			contract.WriteErrorAsJSON(
 				w,
 				http.StatusInternalServerError,
