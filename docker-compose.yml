@@ -50,6 +50,7 @@ services:
       - "8081"
     environment:
       API_SERVICE_KEY: ${API_SERVICE_KEY}
+      LINK_SERVICE_KEY: ${LINK_SERVICE_KEY}
       POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
     depends_on:
@@ -68,6 +69,7 @@ services:
     ports:
       - "8082"
     environment:
+      LINK_SERVICE_KEY: ${LINK_SERVICE_KEY}
       API_SERVICE_KEY: ${API_SERVICE_KEY}
     depends_on:
       data:

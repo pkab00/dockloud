@@ -2,6 +2,7 @@ package serviceauth
 
 import (
 	"errors"
+	"slices"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -13,22 +14,32 @@ var (
 	MissingAudienceError = errors.New("missing audience")
 )
 
+func contailsAudience(provided string, expected []string) bool {
+	return slices.Contains(expected, provided)
+}
+
 type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type Verifier struct {
-	secret []byte
+type ServiceConfig struct {
+	Secret   []byte
+	Subject  string
+	Audience string
 }
 
-func NewVerifier(secret string) (*Verifier, error) {
-	if len(secret) < 32 {
-		return nil, JWTTooShortError
+type Verifier struct {
+	services map[string]ServiceConfig
+}
+
+func NewVerifier(services map[string]ServiceConfig) (*Verifier, error) {
+	for _, service := range services {
+		if len(service.Secret) < 32 {
+			return nil, JWTTooShortError
+		}
 	}
 
-	return &Verifier{
-		secret: []byte(secret),
-	}, nil
+	return &Verifier{services: services}, nil
 }
 
 func (v *Verifier) Verify(rawToken string) (string, error) {
@@ -38,14 +49,21 @@ func (v *Verifier) Verify(rawToken string) (string, error) {
 		rawToken,
 		claims,
 		func(t *jwt.Token) (any, error) {
-			return v.secret, nil
+			unverifiedClaims, ok := t.Claims.(*Claims)
+			if !ok {
+				return nil, InvalidTokenError
+			}
+
+			service, ok := v.services[unverifiedClaims.Issuer]
+			if !ok {
+				return nil, InvalidTokenError
+			}
+
+			return service.Secret, nil
 		},
 		jwt.WithValidMethods(
 			[]string{jwt.SigningMethodHS256.Alg()},
 		),
-		jwt.WithSubject("dockloud-api"),
-		jwt.WithAudience("dockloud-data"),
-		jwt.WithIssuer("dockloud-api"),
 		jwt.WithExpirationRequired(),
 	)
 
@@ -54,6 +72,15 @@ func (v *Verifier) Verify(rawToken string) (string, error) {
 	}
 	if !token.Valid {
 		return "", InvalidTokenError
+	}
+
+	service := v.services[claims.Issuer]
+
+	if claims.Subject != service.Subject {
+		return "", MissingSubjectError
+	}
+	if !contailsAudience(service.Audience, claims.Audience) {
+		return "", MissingAudienceError
 	}
 
 	return claims.Subject, nil

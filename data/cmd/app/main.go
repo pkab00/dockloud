@@ -25,7 +25,21 @@ func main() {
 	}
 	defer rd.Close()
 
-	verifier, err := serviceauth.NewVerifier(os.Getenv("API_SERVICE_KEY"))
+	verifier, err := serviceauth.NewVerifier(
+		map[string]serviceauth.ServiceConfig{
+			"dockloud-api": {
+				Secret:   []byte(os.Getenv("API_SERVICE_KEY")),
+				Subject:  "dockloud-api",
+				Audience: "dockloud-data",
+			},
+			"dockloud-link": {
+				Secret:   []byte(os.Getenv("LINK_SERVICE_KEY")),
+				Subject:  "dockloud-link",
+				Audience: "dockloud-data",
+			},
+		},
+	)
+
 	if err != nil {
 		log.Fatal(err)
 	}
