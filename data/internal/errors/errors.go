@@ -11,4 +11,6 @@ var (
 	EmailAlreadyInUse    = errors.New("email is already in use")
 	DocumentNotFound     = errors.New("document not found")
 	InvalidDocumentName  = errors.New("invalid document name")
+	NoLinksFound         = errors.New("no links found")
+	AccessLinkExpired    = errors.New("access link expired")
 )

@@ -51,4 +51,7 @@ const (
 	ErrDocumentNotFound    = "DOCUMENT_NOT_FOUND"
 	ErrInvalidDocumentName = "INVALID_DOCUMENT_NAME"
 	ErrInvalidDocumentID   = "INVALID_DOCUMENT_ID"
+
+	ErrLinksNotFound = "LINKS_NOT_FOUND"
+	ErrLinkExpired   = "LINK_EXPIRED"
 )
