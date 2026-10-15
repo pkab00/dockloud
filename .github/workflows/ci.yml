@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [ data, api ]
+        service: [ data, link, api ]
 
     permissions:
       contents: read
