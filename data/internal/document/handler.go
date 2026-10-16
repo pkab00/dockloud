@@ -80,7 +80,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 		contract.WriteErrorAsJSON(
 			w,
 			http.StatusBadRequest,
-			contract.ErrReqesterIDMissing,
+			contract.ErrRequesterIDMissing,
 			"Requester ID missing. Make sure to pass it using query parameters.",
 		)
 		return
@@ -120,7 +120,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var req DocumentCreateRequest
+	var req CreateRequest
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
@@ -181,7 +181,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		contract.WriteErrorAsJSON(
 			w,
 			http.StatusBadRequest,
-			contract.ErrReqesterIDMissing,
+			contract.ErrRequesterIDMissing,
 			"Requester ID missing. Make sure to pass it using query parameters.",
 		)
 		return
@@ -221,7 +221,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
-	var req DocumentUpdateRequest
+	var req UpdateRequest
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
@@ -242,7 +242,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		contract.WriteErrorAsJSON(
 			w,
 			http.StatusBadRequest,
-			contract.ErrReqesterIDMissing,
+			contract.ErrRequesterIDMissing,
 			"Requester ID missing. Make sure to pass it using query parameters.",
 		)
 		return

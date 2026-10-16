@@ -43,7 +43,7 @@ func (s *Service) GetByID(ctx context.Context, documentID int, requesterID strin
 	return res.toResponse(), err
 }
 
-func (s *Service) Create(ctx context.Context, req *DocumentCreateRequest) (*DocumentResponse, error) {
+func (s *Service) Create(ctx context.Context, req *CreateRequest) (*DocumentResponse, error) {
 	if strings.TrimSpace(req.Name) == "" {
 		return nil, apperrors.InvalidDocumentName
 	}
@@ -61,7 +61,7 @@ func (s *Service) Update(
 	ctx context.Context,
 	documentID int,
 	requesterID string,
-	req *DocumentUpdateRequest,
+	req *UpdateRequest,
 ) (*DocumentResponse, error) {
 	res, err := s.documentRepo.Update(ctx, documentID, requesterID, req)
 	return res.toResponse(), err

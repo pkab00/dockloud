@@ -36,8 +36,9 @@ func WriteBadRequestErrorAsJSON(w http.ResponseWriter) {
 const (
 	ErrBadRequest         = "BAD_REQUEST"
 	ErrInternal           = "INTERNAL_ERROR"
-	ErrReqesterIDMissing  = "REQUESTER_ID_MISSING"
+	ErrRequesterIDMissing = "REQUESTER_ID_MISSING"
 	ErrQueryParamsMissing = "QUERY_PARAMETERS_MISSING"
+	ErrPermissionDenied   = "PERMISSION_DENIED"
 
 	ErrUserNotFound        = "USER_NOT_FOUND"
 	ErrUserSearchFailed    = "USER_SEARCH_ERROR"

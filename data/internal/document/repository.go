@@ -21,19 +21,19 @@ type Repository interface {
 	GetByAuthorID(ctx context.Context, authorID string, requesterID string) ([]Document, error)
 	GetAccessible(ctx context.Context, uid string) ([]Document, error)
 	GetByID(ctx context.Context, documentID int, requesterID string) (*Document, error)
-	Create(ctx context.Context, req *DocumentCreateRequest) (*Document, error)
+	Create(ctx context.Context, req *CreateRequest) (*Document, error)
 	Delete(ctx context.Context, documentID int, requesterID string) (*Document, error)
-	Update(ctx context.Context, documentID int, requesterID string, req *DocumentUpdateRequest) (*Document, error)
+	Update(ctx context.Context, documentID int, requesterID string, req *UpdateRequest) (*Document, error)
 }
 
-type DocumentCreateRequest struct {
+type CreateRequest struct {
 	OwnerID   string `json:"owner_id"`
 	Name      string `json:"name"`
 	Content   string `json:"content"`
 	IsPrivate bool   `json:"is_private"`
 }
 
-type DocumentUpdateRequest struct {
+type UpdateRequest struct {
 	Name      *string `json:"name"`
 	Content   *string `json:"content"`
 	IsPrivate *bool   `json:"is_private"`
@@ -214,12 +214,12 @@ func (r *RepositoryWithCache) GetByID(ctx context.Context, documentID int, reque
 		}
 
 		return &d, nil
-	} else {
-		return nil, apperrors.AccessDeclined
 	}
+
+	return nil, apperrors.AccessDeclined
 }
 
-func (r *RepositoryWithCache) Create(ctx context.Context, req *DocumentCreateRequest) (*Document, error) {
+func (r *RepositoryWithCache) Create(ctx context.Context, req *CreateRequest) (*Document, error) {
 	var d Document
 
 	query := `
@@ -303,7 +303,7 @@ func (r *RepositoryWithCache) Update(
 	ctx context.Context,
 	documentID int,
 	requesterID string,
-	req *DocumentUpdateRequest,
+	req *UpdateRequest,
 ) (*Document, error) {
 	var d Document
 
