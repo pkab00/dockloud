@@ -18,9 +18,9 @@ func (al *AccessLink) isActiveLink() bool {
 		return false
 	} else if al.RevokedAt != nil && al.RevokedAt.Before(now) {
 		return false
-	} else {
-		return true
 	}
+
+	return true
 }
 
 type AccessPermissions struct {

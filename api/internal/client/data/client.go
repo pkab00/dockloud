@@ -8,12 +8,13 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	apperror "github.com/pkab00/dockloud/api/internal/error"
 	"github.com/pkab00/dockloud/api/internal/model"
-	"github.com/pkab00/dockloud/api/internal/serviceauth"
 	"github.com/pkab00/dockloud/shared/contract"
+	sharedserviceauth "github.com/pkab00/dockloud/shared/serviceauth"
 )
 
 type InternalCreateUserRequest struct {
@@ -58,14 +59,24 @@ type Client struct {
 }
 
 func NewClient(baseURL string) (*Client, error) {
-	token, err := serviceauth.GenerateToken()
+	apiClaims := sharedserviceauth.Claims{
+		Subject:  "dockloud-api",
+		Issuer:   "dockloud-api",
+		Audience: []string{"dockloud-data", "dockloud-link"},
+	}
+
+	token, err := sharedserviceauth.GenerateToken(
+		os.Getenv("API_SERVICE_KEY"),
+		apiClaims,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	transport := &serviceauth.AuthTransport{
-		Base:  http.DefaultTransport,
-		Token: token,
+	transport := &sharedserviceauth.AuthTransport{
+		Base:   http.DefaultTransport,
+		Token:  token,
+		Claims: apiClaims,
 	}
 
 	return &Client{

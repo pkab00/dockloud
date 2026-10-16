@@ -5,12 +5,13 @@ import (
 )
 
 type AuthTransport struct {
-	Base  http.RoundTripper
-	Token *ServiceToken
+	Base   http.RoundTripper
+	Token  *ServiceToken
+	Claims Claims
 }
 
 func (t *AuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if _, err := t.Token.RefreshIfNeeded(); err != nil {
+	if _, err := t.Token.RefreshIfNeeded(t.Claims); err != nil {
 		return nil, err
 	}
 

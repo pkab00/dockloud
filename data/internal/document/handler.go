@@ -26,7 +26,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
 	defer cancel()
 
-	var documents []DocumentResponse
+	var documents []Response
 	var err error
 	authorID := r.URL.Query().Get("author_id")
 	requesterId := r.URL.Query().Get("requester_id")
