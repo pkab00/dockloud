@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/pkab00/dockloud/data/internal/accesslink"
 	"github.com/pkab00/dockloud/data/internal/document"
 	"github.com/pkab00/dockloud/data/internal/user"
 	"github.com/redis/go-redis/v9"
@@ -18,6 +19,10 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 		docRepo = document.NewRepositoryWithCache(db, rd)
 		docServ = document.NewService(docRepo, userRepo)
 		docHand = document.NewHandler(docServ)
+
+		linkRepo = accesslink.NewRepository(db)
+		linkServ = accesslink.NewService(linkRepo)
+		linkHand = accesslink.NewHandler(linkServ)
 	)
 
 	mux.HandleFunc("GET /users/find", userHand.Find)
@@ -31,6 +36,11 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 	mux.HandleFunc("POST /documents", docHand.Create)
 	mux.HandleFunc("DELETE /documents/{id}", docHand.Delete)
 	mux.HandleFunc("PATCH /documents/{id}", docHand.Update)
+
+	mux.HandleFunc("GET /links", linkHand.Get)
+	mux.HandleFunc("GET /links/{token}", linkHand.GetByToken)
+	mux.HandleFunc("POST /links", linkHand.Create)
+	mux.HandleFunc("DELETE /links/{token}", linkHand.Revoke)
 
 	// for healthcheck
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {

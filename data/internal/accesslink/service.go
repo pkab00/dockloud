@@ -4,12 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
 )
 
 type Service struct {
 	repo Repository
+}
+
+type ExternalCreateLinkRequest struct {
+	DocumentID  int               `json:"document_id"`
+	Permissions AccessPermissions `json:"permissions"`
+	ExpiresAt   *time.Time        `json:"expires_at"`
 }
 
 func NewService(repo Repository) *Service {

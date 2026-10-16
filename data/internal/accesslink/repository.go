@@ -47,7 +47,7 @@ type PostgresRepository struct {
 	db *sql.DB
 }
 
-func NewRepositoryWithCache(db *sql.DB) *PostgresRepository {
+func NewRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{
 		db: db,
 	}
