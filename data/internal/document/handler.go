@@ -291,3 +291,160 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(document)
 }
+
+func (h *Handler) GetPublicly(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	documentID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrInvalidDocumentID,
+			"Bad request. Passed invalid document ID.",
+		)
+		return
+	}
+
+	document, err := h.serv.GetUnsafe(ctx, documentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error requesting a document.",
+			)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(document)
+}
+
+func (h *Handler) DeletePublicly(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	documentID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad delete request. Failed to delete a document.",
+		)
+		return
+	}
+
+	document, err := h.serv.DeleteUnsafe(ctx, documentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error deleting a document.",
+			)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(document)
+}
+
+func (h *Handler) UpdatePublicly(w http.ResponseWriter, r *http.Request) {
+	var req UpdateRequest
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	documentID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad update request. Failed to update a document.",
+		)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusBadRequest,
+			contract.ErrBadRequest,
+			"Bad update request. Failed to update a document.",
+		)
+		return
+	}
+
+	document, err := h.serv.UpdateUnsafe(ctx, documentID, &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, apperrors.DocumentNotFound):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusNotFound,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		case errors.Is(err, apperrors.AccessDeclined):
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusForbidden,
+				contract.ErrDocumentNotFound,
+				"No such document found.",
+			)
+		default:
+			logger.Printf("%v", err)
+			contract.WriteErrorAsJSON(
+				w,
+				http.StatusInternalServerError,
+				contract.ErrInternal,
+				"Error updating a document.",
+			)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(document)
+}

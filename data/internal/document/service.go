@@ -5,18 +5,15 @@ import (
 	"strings"
 
 	apperrors "github.com/pkab00/dockloud/data/internal/errors"
-	"github.com/pkab00/dockloud/data/internal/user"
 )
 
 type Service struct {
 	documentRepo Repository
-	userRepo     user.Repository
 }
 
-func NewService(documentRepo Repository, userRepo user.Repository) *Service {
+func NewService(documentRepo Repository) *Service {
 	return &Service{
 		documentRepo: documentRepo,
-		userRepo:     userRepo,
 	}
 }
 
@@ -57,12 +54,22 @@ func (s *Service) Delete(ctx context.Context, documentID int, requesterID string
 	return res.toResponse(), err
 }
 
-func (s *Service) Update(
-	ctx context.Context,
-	documentID int,
-	requesterID string,
-	req *UpdateRequest,
-) (*DocumentResponse, error) {
+func (s *Service) Update(ctx context.Context, documentID int, requesterID string, req *UpdateRequest) (*DocumentResponse, error) {
 	res, err := s.documentRepo.Update(ctx, documentID, requesterID, req)
+	return res.toResponse(), err
+}
+
+func (s *Service) GetUnsafe(ctx context.Context, documentID int) (*DocumentResponse, error) {
+	res, err := s.documentRepo.GetUnsafe(ctx, documentID)
+	return res.toResponse(), err
+}
+
+func (s *Service) DeleteUnsafe(ctx context.Context, documentID int) (*DocumentResponse, error) {
+	res, err := s.documentRepo.DeleteUnsafe(ctx, documentID)
+	return res.toResponse(), err
+}
+
+func (s *Service) UpdateUnsafe(ctx context.Context, documentID int, req *UpdateRequest) (*DocumentResponse, error) {
+	res, err := s.documentRepo.UpdateUnsafe(ctx, documentID, req)
 	return res.toResponse(), err
 }

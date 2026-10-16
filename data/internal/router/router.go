@@ -18,7 +18,7 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 		userHand = user.NewHandler(userServ)
 
 		docRepo = document.NewRepositoryWithCache(db, rd)
-		docServ = document.NewService(docRepo, userRepo)
+		docServ = document.NewService(docRepo)
 		docHand = document.NewHandler(docServ)
 
 		linkRepo = accesslink.NewRepository(db)
@@ -66,6 +66,18 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 	mux.Handle(
 		"PATCH /documents/{id}",
 		serviceauth.RequirePermission(serviceauth.UpdateDocuments)(http.HandlerFunc(docHand.Update)),
+	)
+	mux.Handle(
+		"GET unsafe/documents/{uid}",
+		serviceauth.RequirePermission(serviceauth.ReadDocumentsPublicly)(http.HandlerFunc(docHand.GetPublicly)),
+	)
+	mux.Handle(
+		"PATCH unsafe/documents/{uid}",
+		serviceauth.RequirePermission(serviceauth.UpdateDocumentsPublicly)(http.HandlerFunc(docHand.UpdatePublicly)),
+	)
+	mux.Handle(
+		"DELETE unsafe/documents/{uid}",
+		serviceauth.RequirePermission(serviceauth.DeleteDocumentsPublicly)(http.HandlerFunc(docHand.DeletePublicly)),
 	)
 
 	mux.Handle(
