@@ -13,16 +13,16 @@ type Document struct {
 }
 
 type Link struct {
-	Token       string            `json:"token"`
-	DocumentID  int               `json:"document_id"`
-	CreatorID   string            `json:"creator_id"`
-	Permissions AccessPermissions `json:"permissions"`
-	CreatedAt   time.Time         `json:"created_at"`
-	ExpiresAt   *time.Time        `json:"expires_at"`
-	RevokedAt   *time.Time        `json:"revoked_at"`
+	Token       string      `json:"token"`
+	DocumentID  int         `json:"document_id"`
+	CreatorID   string      `json:"creator_id"`
+	Permissions Permissions `json:"permissions"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ExpiresAt   *time.Time  `json:"expires_at"`
+	RevokedAt   *time.Time  `json:"revoked_at"`
 }
 
-type AccessPermissions struct {
+type Permissions struct {
 	Read   bool `json:"read"`
 	Write  bool `json:"write"`
 	Delete bool `json:"delete"`
