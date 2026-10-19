@@ -21,7 +21,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-type CreateLinkRequest struct {
+type InternalCreateLinkRequest struct {
 	Token       string            `json:"token"`
 	DocumentID  int               `json:"document_id"`
 	Permissions model.Permissions `json:"permissions"`
@@ -103,7 +103,7 @@ func (c *Client) newRequest(ctx context.Context, method string, url string, body
 
 // ========== LINKS ==========
 
-func (c *Client) CreateLink(ctx context.Context, reqID string, request CreateLinkRequest) (*model.Link, error) {
+func (c *Client) CreateLink(ctx context.Context, reqID string, request InternalCreateLinkRequest) (*model.Link, error) {
 	var err error
 
 	body, err := marshalRequestBody(request)
@@ -138,43 +138,13 @@ func (c *Client) CreateLink(ctx context.Context, reqID string, request CreateLin
 	return &link, nil
 }
 
-func (c *Client) GetLinksForDocument(ctx context.Context, creatorID string, documentID int) ([]model.Link, error) {
+func (c *Client) GetLinksList(ctx context.Context, creatorID string, documentID string) ([]model.Link, error) {
 	var err error
 
 	httpRequest, err := c.newRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("%s/links?creator_id=%s&document_id=%d", c.baseURL, creatorID, documentID),
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create data service request: %w", err)
-	}
-
-	response, err := c.httpClient.Do(httpRequest)
-	if err != nil {
-		return nil, fmt.Errorf("create data service request: %w", err)
-	}
-	defer response.Body.Close()
-
-	if err := checkResponseStatus(response, http.StatusOK); err != nil {
-		return nil, fmt.Errorf("create data service request: %w", err)
-	}
-
-	var link []model.Link
-	if err := json.NewDecoder(response.Body).Decode(&link); err != nil {
-		return nil, fmt.Errorf("create data service request: %w", err)
-	}
-	return link, nil
-}
-
-func (c *Client) GetLinksByCreator(ctx context.Context, creatorID string) ([]model.Link, error) {
-	var err error
-
-	httpRequest, err := c.newRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("%s/links?creator_id=%s", c.baseURL, creatorID),
+		fmt.Sprintf("%s/links?creator_id=%s&document_id=%s", c.baseURL, creatorID, documentID),
 		nil,
 	)
 	if err != nil {

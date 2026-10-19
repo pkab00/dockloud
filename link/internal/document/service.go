@@ -2,18 +2,17 @@ package document
 
 import (
 	"context"
-	"errors"
-	"time"
 
 	"github.com/pkab00/dockloud/link/internal/client/data"
+	apperror "github.com/pkab00/dockloud/link/internal/error"
 	"github.com/pkab00/dockloud/link/internal/model"
 )
 
 type Service struct {
-	client data.Client
+	client *data.Client
 }
 
-func NewService(client data.Client) *Service {
+func NewService(client *data.Client) *Service {
 	return &Service{client: client}
 }
 
@@ -24,12 +23,12 @@ func (s *Service) Get(ctx context.Context, token string) (*model.Document, error
 	}
 
 	switch {
-	case link.ExpiresAt.Before(time.Now()):
-		return nil, errors.New("token expired")
-	case link.RevokedAt.Before(time.Now()):
-		return nil, errors.New("token revoked")
+	case link.Expired():
+		return nil, apperror.ErrTokenExpired
+	case link.Revoked():
+		return nil, apperror.ErrTokenRevoked
 	case !link.Permissions.Read:
-		return nil, errors.New("no permissions")
+		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.GetDocument(ctx, link.DocumentID)
 		if err != nil {
@@ -46,12 +45,12 @@ func (s *Service) Update(ctx context.Context, token string, req data.UpdateDocum
 	}
 
 	switch {
-	case link.ExpiresAt.Before(time.Now()):
-		return nil, errors.New("token expired")
-	case link.RevokedAt.Before(time.Now()):
-		return nil, errors.New("token revoked")
+	case link.Expired():
+		return nil, apperror.ErrTokenExpired
+	case link.Revoked():
+		return nil, apperror.ErrTokenRevoked
 	case !link.Permissions.Write:
-		return nil, errors.New("no permissions")
+		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.UpdateDocument(ctx, req, link.DocumentID)
 		if err != nil {
@@ -68,12 +67,12 @@ func (s *Service) Delete(ctx context.Context, token string) (*model.Document, er
 	}
 
 	switch {
-	case link.ExpiresAt.Before(time.Now()):
-		return nil, errors.New("token expired")
-	case link.RevokedAt.Before(time.Now()):
-		return nil, errors.New("token revoked")
+	case link.Expired():
+		return nil, apperror.ErrTokenExpired
+	case link.Revoked():
+		return nil, apperror.ErrTokenRevoked
 	case !link.Permissions.Delete:
-		return nil, errors.New("no permissions")
+		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.DeleteDocument(ctx, link.DocumentID)
 		if err != nil {

@@ -28,17 +28,12 @@ type Permissions struct {
 	Delete bool `json:"delete"`
 }
 
-func (l *Link) isActive() bool {
+func (l *Link) Expired() bool {
 	now := time.Now()
-	if l.ExpiresAt != nil && l.ExpiresAt.Before(now) {
-		return false
-	} else if l.RevokedAt != nil && l.RevokedAt.Before(now) {
-		return false
-	}
-
-	return true
+	return l.ExpiresAt != nil && l.ExpiresAt.Before(now)
 }
 
-func (l *Link) isEvergreen() bool {
-	return l.ExpiresAt == nil
+func (l *Link) Revoked() bool {
+	now := time.Now()
+	return l.RevokedAt != nil && l.RevokedAt.Before(now)
 }

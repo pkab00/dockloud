@@ -68,15 +68,15 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 		serviceauth.RequirePermission(serviceauth.UpdateDocuments)(http.HandlerFunc(docHand.Update)),
 	)
 	mux.Handle(
-		"GET unsafe/documents/{id}",
+		"GET /unsafe/documents/{id}",
 		serviceauth.RequirePermission(serviceauth.ReadDocumentsPublicly)(http.HandlerFunc(docHand.GetPublicly)),
 	)
 	mux.Handle(
-		"PATCH unsafe/documents/{id}",
+		"PATCH /unsafe/documents/{id}",
 		serviceauth.RequirePermission(serviceauth.UpdateDocumentsPublicly)(http.HandlerFunc(docHand.UpdatePublicly)),
 	)
 	mux.Handle(
-		"DELETE unsafe/documents/{id}",
+		"DELETE /unsafe/documents/{id}",
 		serviceauth.RequirePermission(serviceauth.DeleteDocumentsPublicly)(http.HandlerFunc(docHand.DeletePublicly)),
 	)
 
