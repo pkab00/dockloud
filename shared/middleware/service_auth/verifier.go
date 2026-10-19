@@ -14,7 +14,7 @@ var (
 	MissingAudienceError = errors.New("missing audience")
 )
 
-func contailsAudience(provided string, expected []string) bool {
+func containsAudience(provided string, expected []string) bool {
 	return slices.Contains(expected, provided)
 }
 
@@ -79,7 +79,7 @@ func (v *Verifier) Verify(rawToken string) (string, error) {
 	if claims.Subject != service.Subject {
 		return "", MissingSubjectError
 	}
-	if !contailsAudience(service.Audience, claims.Audience) {
+	if !containsAudience(service.Audience, claims.Audience) {
 		return "", MissingAudienceError
 	}
 

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/pkab00/dockloud/api/internal/router"
-	"github.com/pkab00/dockloud/shared/middleware"
+	"github.com/pkab00/dockloud/shared/middleware/logging"
 )
 
 func main() {
@@ -13,5 +13,5 @@ func main() {
 	mux := http.NewServeMux()
 
 	router.RegisterRoutes(mux, JWTsecret)
-	http.ListenAndServe(":8080", middleware.Logger(mux))
+	http.ListenAndServe(":8080", logging.Logger(mux))
 }

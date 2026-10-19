@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkab00/dockloud/data/internal/accesslink"
 	"github.com/pkab00/dockloud/data/internal/document"
-	"github.com/pkab00/dockloud/data/internal/serviceauth"
+	"github.com/pkab00/dockloud/data/internal/permissions"
 	"github.com/pkab00/dockloud/data/internal/user"
 	"github.com/redis/go-redis/v9"
 )
@@ -28,73 +28,73 @@ func RegisterRoutes(db *sql.DB, rd *redis.Client, mux *http.ServeMux) {
 
 	mux.Handle(
 		"GET /users/find",
-		serviceauth.RequirePermission(serviceauth.ReadUsers)(http.HandlerFunc(userHand.Find)),
+		permissions.RequirePermission(permissions.ReadUsers)(http.HandlerFunc(userHand.Find)),
 	)
 	mux.Handle(
 		"GET /users/auth",
-		serviceauth.RequirePermission(serviceauth.ReadUsers)(http.HandlerFunc(userHand.Auth)),
+		permissions.RequirePermission(permissions.ReadUsers)(http.HandlerFunc(userHand.Auth)),
 	)
 	mux.Handle(
 		"POST /users",
-		serviceauth.RequirePermission(serviceauth.CreateUsers)(http.HandlerFunc(userHand.Create)),
+		permissions.RequirePermission(permissions.CreateUsers)(http.HandlerFunc(userHand.Create)),
 	)
 	mux.Handle(
 		"DELETE /users/{uid}",
-		serviceauth.RequirePermission(serviceauth.DeleteUsers)(http.HandlerFunc(userHand.Delete)),
+		permissions.RequirePermission(permissions.DeleteUsers)(http.HandlerFunc(userHand.Delete)),
 	)
 	mux.Handle(
 		"PATCH /users/{uid}",
-		serviceauth.RequirePermission(serviceauth.UpdateUsers)(http.HandlerFunc(userHand.Update)),
+		permissions.RequirePermission(permissions.UpdateUsers)(http.HandlerFunc(userHand.Update)),
 	)
 
 	mux.Handle(
 		"GET /documents",
-		serviceauth.RequirePermission(serviceauth.ReadDocuments)(http.HandlerFunc(docHand.Get)),
+		permissions.RequirePermission(permissions.ReadDocuments)(http.HandlerFunc(docHand.Get)),
 	)
 	mux.Handle(
 		"GET /documents/{id}",
-		serviceauth.RequirePermission(serviceauth.ReadDocuments)(http.HandlerFunc(docHand.GetByID)),
+		permissions.RequirePermission(permissions.ReadDocuments)(http.HandlerFunc(docHand.GetByID)),
 	)
 	mux.Handle(
 		"POST /documents",
-		serviceauth.RequirePermission(serviceauth.CreateDocuments)(http.HandlerFunc(docHand.Create)),
+		permissions.RequirePermission(permissions.CreateDocuments)(http.HandlerFunc(docHand.Create)),
 	)
 	mux.Handle(
 		"DELETE /documents/{id}",
-		serviceauth.RequirePermission(serviceauth.DeleteDocuments)(http.HandlerFunc(docHand.Delete)),
+		permissions.RequirePermission(permissions.DeleteDocuments)(http.HandlerFunc(docHand.Delete)),
 	)
 	mux.Handle(
 		"PATCH /documents/{id}",
-		serviceauth.RequirePermission(serviceauth.UpdateDocuments)(http.HandlerFunc(docHand.Update)),
+		permissions.RequirePermission(permissions.UpdateDocuments)(http.HandlerFunc(docHand.Update)),
 	)
 	mux.Handle(
 		"GET /unsafe/documents/{id}",
-		serviceauth.RequirePermission(serviceauth.ReadDocumentsPublicly)(http.HandlerFunc(docHand.GetPublicly)),
+		permissions.RequirePermission(permissions.ReadDocumentsPublicly)(http.HandlerFunc(docHand.GetPublicly)),
 	)
 	mux.Handle(
 		"PATCH /unsafe/documents/{id}",
-		serviceauth.RequirePermission(serviceauth.UpdateDocumentsPublicly)(http.HandlerFunc(docHand.UpdatePublicly)),
+		permissions.RequirePermission(permissions.UpdateDocumentsPublicly)(http.HandlerFunc(docHand.UpdatePublicly)),
 	)
 	mux.Handle(
 		"DELETE /unsafe/documents/{id}",
-		serviceauth.RequirePermission(serviceauth.DeleteDocumentsPublicly)(http.HandlerFunc(docHand.DeletePublicly)),
+		permissions.RequirePermission(permissions.DeleteDocumentsPublicly)(http.HandlerFunc(docHand.DeletePublicly)),
 	)
 
 	mux.Handle(
 		"GET /links",
-		serviceauth.RequirePermission(serviceauth.ReadLinks)(http.HandlerFunc(linkHand.Get)),
+		permissions.RequirePermission(permissions.ReadLinks)(http.HandlerFunc(linkHand.Get)),
 	)
 	mux.Handle(
 		"GET /links/{token}",
-		serviceauth.RequirePermission(serviceauth.ReadLinks)(http.HandlerFunc(linkHand.GetByToken)),
+		permissions.RequirePermission(permissions.ReadLinks)(http.HandlerFunc(linkHand.GetByToken)),
 	)
 	mux.Handle(
 		"POST /links",
-		serviceauth.RequirePermission(serviceauth.CreateLinks)(http.HandlerFunc(linkHand.Create)),
+		permissions.RequirePermission(permissions.CreateLinks)(http.HandlerFunc(linkHand.Create)),
 	)
 	mux.Handle(
 		"DELETE /links/{token}",
-		serviceauth.RequirePermission(serviceauth.RevokeLinks)(http.HandlerFunc(linkHand.Revoke)),
+		permissions.RequirePermission(permissions.RevokeLinks)(http.HandlerFunc(linkHand.Revoke)),
 	)
 
 	// for healthcheck

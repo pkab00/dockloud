@@ -8,8 +8,8 @@ import (
 	"github.com/pkab00/dockloud/data/internal/cache"
 	"github.com/pkab00/dockloud/data/internal/database"
 	"github.com/pkab00/dockloud/data/internal/router"
-	"github.com/pkab00/dockloud/data/internal/serviceauth"
-	"github.com/pkab00/dockloud/shared/middleware"
+	"github.com/pkab00/dockloud/shared/middleware/logging"
+	"github.com/pkab00/dockloud/shared/middleware/service_auth"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 	router.RegisterRoutes(db, rd, mux)
 	http.ListenAndServe(
 		":8081",
-		middleware.Logger(
+		logging.Logger(
 			serviceauth.Middleware(verifier)(mux),
 		),
 	)

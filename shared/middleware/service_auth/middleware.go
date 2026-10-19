@@ -34,15 +34,7 @@ func Middleware(verifier *Verifier) func(http.Handler) http.Handler {
 	}
 }
 
-func serviceFromContext(ctx context.Context) (string, bool) {
+func ServiceFromContext(ctx context.Context) (string, bool) {
 	res, ok := ctx.Value(contextKey{}).(string)
 	return res, ok
-}
-
-func checkPermission(ctx context.Context, permission Permission) bool {
-	service, ok := serviceFromContext(ctx)
-	if !ok {
-		return false
-	}
-	return permission.CheckFor(service)
 }

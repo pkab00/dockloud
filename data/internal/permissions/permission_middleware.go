@@ -1,9 +1,11 @@
-package serviceauth
+package permissions
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/pkab00/dockloud/shared/contract"
+	"github.com/pkab00/dockloud/shared/middleware/service_auth"
 )
 
 func RequirePermission(permission Permission) func(http.Handler) http.Handler {
@@ -21,4 +23,12 @@ func RequirePermission(permission Permission) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func checkPermission(ctx context.Context, permission Permission) bool {
+	service, ok := serviceauth.ServiceFromContext(ctx)
+	if !ok {
+		return false
+	}
+	return permission.CheckFor(service)
 }
