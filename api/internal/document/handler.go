@@ -3,7 +3,6 @@ package document
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -40,14 +39,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	d, err := h.serv.Create(ctx, *req)
 	if err != nil {
-		var clientErr *apperror.ClientError
-		if errors.As(err, &clientErr) {
-			apperror.WriteClientError(w, *clientErr)
-		} else {
-			log.Printf("%v", err)
-			apperror.WriteUnknownError(w)
-		}
-
+		apperror.HandleError(w, err)
 		return
 	}
 
@@ -76,13 +68,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	d, err = h.serv.Update(ctx, docID, req)
 	if err != nil {
-		var clientErr *apperror.ClientError
-		if errors.As(err, &clientErr) {
-			apperror.WriteClientError(w, *clientErr)
-		} else {
-			apperror.WriteUnknownError(w)
-		}
-
+		apperror.HandleError(w, err)
 		return
 	}
 
@@ -104,14 +90,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	d, err := h.serv.Delete(ctx, docID)
 	if err != nil {
-		var clientErr *apperror.ClientError
-		if errors.As(err, &clientErr) {
-			apperror.WriteClientError(w, *clientErr)
-		} else {
-			log.Printf("%v", err)
-			apperror.WriteUnknownError(w)
-		}
-
+		apperror.HandleError(w, err)
 		return
 	}
 
@@ -134,13 +113,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		var clientErr *apperror.ClientError
-		if errors.As(err, &clientErr) {
-			apperror.WriteClientError(w, *clientErr)
-		} else {
-			apperror.WriteUnknownError(w)
-		}
-
+		apperror.HandleError(w, err)
 		return
 	}
 
@@ -163,13 +136,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	d, err = h.serv.GetByID(ctx, docID)
 	if err != nil {
-		var clientErr *apperror.ClientError
-		if errors.As(err, &clientErr) {
-			apperror.WriteClientError(w, *clientErr)
-		} else {
-			apperror.WriteUnknownError(w)
-		}
-
+		apperror.HandleError(w, err)
 		return
 	}
 
