@@ -31,7 +31,7 @@ func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	var (
 		authService = auth.NewService(dataClient)
 		authHandler = auth.NewHandler(authService)
-		docService  = document.NewService(dataClient)
+		docService  = document.NewService(dataClient, linkClient)
 		docHandler  = document.NewHandler(docService)
 		linkService = link.NewService(linkClient)
 		linkHandler = link.NewHandler(linkService)
@@ -59,6 +59,19 @@ func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	mux.Handle(
 		"DELETE /documents/{id}",
 		middleware.Auth(verifier)(http.HandlerFunc(docHandler.Delete)),
+	)
+
+	mux.Handle(
+		"GET /documents/shared/{token}",
+		http.HandlerFunc(docHandler.GetShared),
+	)
+	mux.Handle(
+		"PATCH /documents/shared/{token}",
+		http.HandlerFunc(docHandler.UpdateShared),
+	)
+	mux.Handle(
+		"DELETE /documents/shared/{token}",
+		http.HandlerFunc(docHandler.DeleteShared),
 	)
 
 	mux.Handle(

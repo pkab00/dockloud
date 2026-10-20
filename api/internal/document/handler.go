@@ -76,6 +76,31 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(d)
 }
 
+func (h *Handler) UpdateShared(w http.ResponseWriter, r *http.Request) {
+	var d *model.Document
+	var req *data.UpdateDocumentRequest
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		apperror.WriteBadRequestError(w)
+		return
+	}
+
+	linkToken := r.PathValue("token")
+
+	d, err = h.serv.UpdateShared(ctx, linkToken, req)
+	if err != nil {
+		apperror.HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(d)
+}
+
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -89,6 +114,24 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d, err := h.serv.Delete(ctx, docID)
+	if err != nil {
+		apperror.HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(d)
+}
+
+func (h *Handler) DeleteShared(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	linkToken := r.PathValue("token")
+
+	d, err := h.serv.DeleteShared(ctx, linkToken)
 	if err != nil {
 		apperror.HandleError(w, err)
 		return
@@ -112,6 +155,25 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		d, err = h.serv.GetAll(ctx)
 	}
 
+	if err != nil {
+		apperror.HandleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(d)
+}
+
+func (h *Handler) GetShared(w http.ResponseWriter, r *http.Request) {
+	var d *model.Document
+	var err error
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	linkToken := r.PathValue("token")
+
+	d, err = h.serv.GetShared(ctx, linkToken)
 	if err != nil {
 		apperror.HandleError(w, err)
 		return

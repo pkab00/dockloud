@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkab00/dockloud/api/internal/client/data"
+	"github.com/pkab00/dockloud/api/internal/client/link"
 	apperror "github.com/pkab00/dockloud/api/internal/error"
 	"github.com/pkab00/dockloud/api/internal/middleware"
 	"github.com/pkab00/dockloud/api/internal/model"
@@ -16,7 +17,8 @@ type ExternalCreateDocumentRequest struct {
 }
 
 type Service struct {
-	client *data.Client
+	dataClient *data.Client
+	linkClient *link.Client
 }
 
 func getRequesterID(ctx context.Context) (*string, error) {
@@ -27,8 +29,11 @@ func getRequesterID(ctx context.Context) (*string, error) {
 	return &reqID, nil
 }
 
-func NewService(client *data.Client) *Service {
-	return &Service{client: client}
+func NewService(dataClient *data.Client, linkClient *link.Client) *Service {
+	return &Service{
+		dataClient: dataClient,
+		linkClient: linkClient,
+	}
 }
 
 func (s *Service) Create(ctx context.Context, userReq ExternalCreateDocumentRequest) (*model.Document, error) {
@@ -46,7 +51,7 @@ func (s *Service) Create(ctx context.Context, userReq ExternalCreateDocumentRequ
 		isPrivate = *userReq.IsPrivate
 	}
 
-	doc, err := s.client.CreateDocument(ctx, &data.InternalCreateDocumentRequest{
+	doc, err := s.dataClient.CreateDocument(ctx, &data.InternalCreateDocumentRequest{
 		OwnerID:   *reqID,
 		Name:      userReq.Name,
 		Content:   userReq.Content,
@@ -66,7 +71,7 @@ func (s *Service) Update(ctx context.Context, docID int, userReq *data.UpdateDoc
 		return nil, err
 	}
 
-	doc, err := s.client.UpdateDocument(ctx, docID, *reqID, userReq)
+	doc, err := s.dataClient.UpdateDocument(ctx, docID, *reqID, userReq)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +86,7 @@ func (s *Service) GetAll(ctx context.Context) ([]model.Document, error) {
 		return nil, err
 	}
 
-	docs, err := s.client.GetAllDocuments(ctx, *reqID)
+	docs, err := s.dataClient.GetAllDocuments(ctx, *reqID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +101,7 @@ func (s *Service) GetByAuthor(ctx context.Context, authID string) ([]model.Docum
 		return nil, err
 	}
 
-	docs, err := s.client.GetDocumentsByAuthor(ctx, *reqID, authID)
+	docs, err := s.dataClient.GetDocumentsByAuthor(ctx, *reqID, authID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +116,7 @@ func (s *Service) GetByID(ctx context.Context, docID int) (*model.Document, erro
 		return nil, err
 	}
 
-	doc, err := s.client.GetDocumentByID(ctx, docID, *reqID)
+	doc, err := s.dataClient.GetDocumentByID(ctx, docID, *reqID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +131,33 @@ func (s *Service) Delete(ctx context.Context, docID int) (*model.Document, error
 		return nil, err
 	}
 
-	docs, err := s.client.DeleteDocument(ctx, docID, *reqID)
+	docs, err := s.dataClient.DeleteDocument(ctx, docID, *reqID)
 	if err != nil {
 		return nil, err
 	}
 	return docs, nil
+}
+
+func (s *Service) GetShared(ctx context.Context, token string) (*model.Document, error) {
+	doc, err := s.linkClient.GetDocument(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
+func (s *Service) UpdateShared(ctx context.Context, token string, req *data.UpdateDocumentRequest) (*model.Document, error) {
+	doc, err := s.linkClient.UpdateDocument(ctx, token, req)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
+func (s *Service) DeleteShared(ctx context.Context, token string) (*model.Document, error) {
+	doc, err := s.linkClient.DeleteDocument(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
 }

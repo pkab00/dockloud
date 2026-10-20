@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkab00/dockloud/api/internal/client"
+	"github.com/pkab00/dockloud/api/internal/client/data"
 	"github.com/pkab00/dockloud/api/internal/model"
 )
 
@@ -28,6 +29,8 @@ type CreateLinkRequest struct {
 	Permissions model.Permissions `json:"permissions"`
 	ExpiresAt   *time.Time        `json:"expires_at"`
 }
+
+// ========== LINKS ==========
 
 func (c *Client) CreateLink(ctx context.Context, req *CreateLinkRequest, reqID string) (*model.Link, error) {
 	var err error
@@ -124,4 +127,104 @@ func (c *Client) GetLinks(ctx context.Context, creatorID string, documentID stri
 	}
 
 	return links, nil
+}
+
+// ========== DOCUMENTS ==========
+
+func (c *Client) GetDocument(ctx context.Context, token string) (*model.Document, error) {
+	var err error
+
+	clientReq, err := c.NewRequest(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/documents/%s", c.BaseURL, token),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(clientReq)
+	if err != nil {
+		return nil, fmt.Errorf("send get link request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := client.CheckResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, fmt.Errorf("check get link response: %w", err)
+	}
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode get link response: %w", err)
+	}
+
+	return &document, nil
+}
+
+func (c *Client) UpdateDocument(ctx context.Context, token string, request *data.UpdateDocumentRequest) (*model.Document, error) {
+	var err error
+
+	body, err := client.MarshalRequestBody(request)
+	if err != nil {
+		return nil, err
+	}
+
+	clientReq, err := c.NewRequest(
+		ctx,
+		http.MethodPatch,
+		fmt.Sprintf("%s/documents/%s", c.BaseURL, token),
+		body,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(clientReq)
+	if err != nil {
+		return nil, fmt.Errorf("send get link request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := client.CheckResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, fmt.Errorf("check get link response: %w", err)
+	}
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode get link response: %w", err)
+	}
+
+	return &document, nil
+}
+
+func (c *Client) DeleteDocument(ctx context.Context, token string) (*model.Document, error) {
+	var err error
+
+	clientReq, err := c.NewRequest(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("%s/documents/%s", c.BaseURL, token),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(clientReq)
+	if err != nil {
+		return nil, fmt.Errorf("send get link request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := client.CheckResponseStatus(resp, http.StatusOK); err != nil {
+		return nil, fmt.Errorf("check get link response: %w", err)
+	}
+
+	var document model.Document
+	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
+		return nil, fmt.Errorf("decode get link response: %w", err)
+	}
+
+	return &document, nil
 }
