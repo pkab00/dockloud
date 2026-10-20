@@ -23,6 +23,8 @@ func WriteAppError(w http.ResponseWriter, err error) {
 		contract.WriteErrorAsJSON(w, http.StatusGone, contract.ErrLinkExpired, "Token revoked")
 	case errors.Is(err, ErrNoPermission):
 		contract.WriteErrorAsJSON(w, http.StatusForbidden, contract.ErrPermissionDenied, "No permission")
+	case errors.Is(err, ErrNoRightsToCreate):
+		contract.WriteErrorAsJSON(w, http.StatusForbidden, contract.ErrLinkCreationNotAllowed, "No rights to create link")
 	default:
 		contract.WriteErrorAsJSON(w, http.StatusInternalServerError, contract.ErrInternal, "Internal server error: "+err.Error())
 	}

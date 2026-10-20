@@ -99,12 +99,40 @@ func WriteClientError(w http.ResponseWriter, err ClientError) {
 			err.Code,
 			"Unsupported document name. Please fix your request and try again.",
 		)
+	case contract.ErrPermissionDenied:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Permission denied.",
+		)
+	case contract.ErrLinksNotFound:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Links not found.",
+		)
+	case contract.ErrLinkExpired:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Link is expired.",
+		)
+	case contract.ErrLinkCreationNotAllowed:
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusNotFound,
+			contract.ErrDocumentNotFound,
+			"No existing documents found by request.",
+		)
 	default:
 		contract.WriteErrorAsJSON(
 			w,
 			http.StatusInternalServerError,
 			err.Code,
-			"Unknown internal error.",
+			"Unknown client error.",
 		)
 	}
 }

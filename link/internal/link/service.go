@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkab00/dockloud/link/internal/client/data"
+	apperror "github.com/pkab00/dockloud/link/internal/error"
 	"github.com/pkab00/dockloud/link/internal/model"
 )
 
@@ -35,6 +36,17 @@ func NewService(client *data.Client) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, reqID string, request ExternalCreateLinkRequest) (*model.Link, error) {
+	var err error
+
+	doc, err := s.client.GetDocument(ctx, request.DocumentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if doc.OwnerID != reqID {
+		return nil, apperror.ErrNoRightsToCreate
+	}
+
 	token, err := generateToken()
 	if err != nil {
 		return nil, err

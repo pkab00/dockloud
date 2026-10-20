@@ -52,7 +52,7 @@ func (c *Client) CreateLink(ctx context.Context, req *CreateLinkRequest, reqID s
 	}
 	defer resp.Body.Close()
 
-	if err := client.CheckResponseStatus(resp, http.StatusOK); err != nil {
+	if err := client.CheckResponseStatus(resp, http.StatusCreated); err != nil {
 		return nil, fmt.Errorf("check create link response: %w", err)
 	}
 
