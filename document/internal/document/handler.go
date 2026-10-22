@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkab00/dockloud/api/internal/client/data"
-	apperror "github.com/pkab00/dockloud/api/internal/error"
-	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/document/internal/client/data"
+	apperror "github.com/pkab00/dockloud/document/internal/error"
+	"github.com/pkab00/dockloud/document/internal/model"
 )
 
 var logger = log.Default()

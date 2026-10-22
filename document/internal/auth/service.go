@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/pkab00/dockloud/api/internal/client/data"
-	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/document/internal/client/data"
+	"github.com/pkab00/dockloud/document/internal/model"
 )
 
 var secretKey = os.Getenv("JWT_KEY")
@@ -46,7 +46,7 @@ func hashPassword(password string) string {
 func generateJWTToken(uid string) (*model.AuthResult, error) {
 	created := time.Now()
 	expires := created.Add(time.Hour * 2)
-	issue := "dockloud-api"
+	issue := "dockloud-document"
 
 	claims := jwt.MapClaims{
 		"sub": uid,            // идентификатор

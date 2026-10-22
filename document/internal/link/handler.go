@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkab00/dockloud/api/internal/client/link"
-	apperror "github.com/pkab00/dockloud/api/internal/error"
+	"github.com/pkab00/dockloud/document/internal/client/link"
+	apperror "github.com/pkab00/dockloud/document/internal/error"
 )
 
 type Handler struct {

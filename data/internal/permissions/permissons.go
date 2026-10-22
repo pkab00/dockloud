@@ -24,7 +24,7 @@ var (
 )
 
 var servicePermissions = map[string][]Permission{
-	"dockloud-api": {
+	"dockloud-document": {
 		ReadUsers, CreateUsers, UpdateUsers, DeleteUsers,
 		ReadDocuments, CreateDocuments, UpdateDocuments, DeleteDocuments,
 	},

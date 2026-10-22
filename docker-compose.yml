@@ -49,7 +49,7 @@ services:
     ports:
       - "8081"
     environment:
-      API_SERVICE_KEY: ${API_SERVICE_KEY}
+      DOCUMENT_SERVICE_KEY: ${DOCUMENT_SERVICE_KEY}
       LINK_SERVICE_KEY: ${LINK_SERVICE_KEY}
       POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
@@ -70,7 +70,7 @@ services:
       - "8082"
     environment:
       LINK_SERVICE_KEY: ${LINK_SERVICE_KEY}
-      API_SERVICE_KEY: ${API_SERVICE_KEY}
+      DOCUMENT_SERVICE_KEY: ${DOCUMENT_SERVICE_KEY}
     depends_on:
       data:
         condition: service_healthy
@@ -81,14 +81,14 @@ services:
       retries: 3
       start_period: 5s
 
-  api:
-    image: ghcr.io/pkab00/dockloud-api:latest
-    container_name: dockloud-api
+  document:
+    image: ghcr.io/pkab00/dockloud-document:latest
+    container_name: dockloud-document
     ports:
       - "8080:8080"
     environment:
       JWT_KEY: ${JWT_KEY}
-      API_SERVICE_KEY: ${API_SERVICE_KEY}
+      DOCUMENT_SERVICE_KEY: ${DOCUMENT_SERVICE_KEY}
     depends_on:
       link:
         condition: service_healthy

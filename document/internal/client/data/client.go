@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pkab00/dockloud/api/internal/client"
-	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/document/internal/client"
+	"github.com/pkab00/dockloud/document/internal/model"
 )
 
 type InternalCreateUserRequest struct {

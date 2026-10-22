@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	apperror "github.com/pkab00/dockloud/api/internal/error"
+	apperror "github.com/pkab00/dockloud/document/internal/error"
 )
 
 var logger = log.Default()

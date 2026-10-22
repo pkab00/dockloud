@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/pkab00/dockloud/api/internal/router"
+	"github.com/pkab00/dockloud/document/internal/router"
 	"github.com/pkab00/dockloud/shared/middleware/logging"
 )
 

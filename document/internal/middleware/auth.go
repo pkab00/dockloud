@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pkab00/dockloud/api/internal/auth"
+	"github.com/pkab00/dockloud/document/internal/auth"
 )
 
 type contextKey struct{}

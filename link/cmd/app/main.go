@@ -20,9 +20,9 @@ func main() {
 
 	verifier, err := serviceauth.NewVerifier(
 		map[string]serviceauth.ServiceConfig{
-			"dockloud-api": {
-				Secret:   []byte(os.Getenv("API_SERVICE_KEY")),
-				Subject:  "dockloud-api",
+			"dockloud-document": {
+				Secret:   []byte(os.Getenv("DOCUMENT_SERVICE_KEY")),
+				Subject:  "dockloud-document",
 				Audience: "dockloud-link",
 			},
 		},

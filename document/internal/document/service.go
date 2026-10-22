@@ -3,11 +3,11 @@ package document
 import (
 	"context"
 
-	"github.com/pkab00/dockloud/api/internal/client/data"
-	"github.com/pkab00/dockloud/api/internal/client/link"
-	apperror "github.com/pkab00/dockloud/api/internal/error"
-	"github.com/pkab00/dockloud/api/internal/middleware"
-	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/document/internal/client/data"
+	"github.com/pkab00/dockloud/document/internal/client/link"
+	apperror "github.com/pkab00/dockloud/document/internal/error"
+	"github.com/pkab00/dockloud/document/internal/middleware"
+	"github.com/pkab00/dockloud/document/internal/model"
 )
 
 type ExternalCreateDocumentRequest struct {

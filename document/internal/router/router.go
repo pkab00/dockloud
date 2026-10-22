@@ -4,12 +4,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/pkab00/dockloud/api/internal/auth"
-	dataclient "github.com/pkab00/dockloud/api/internal/client/data"
-	linkclient "github.com/pkab00/dockloud/api/internal/client/link"
-	"github.com/pkab00/dockloud/api/internal/document"
-	"github.com/pkab00/dockloud/api/internal/link"
-	"github.com/pkab00/dockloud/api/internal/middleware"
+	"github.com/pkab00/dockloud/document/internal/auth"
+	dataclient "github.com/pkab00/dockloud/document/internal/client/data"
+	linkclient "github.com/pkab00/dockloud/document/internal/client/link"
+	"github.com/pkab00/dockloud/document/internal/document"
+	"github.com/pkab00/dockloud/document/internal/link"
+	"github.com/pkab00/dockloud/document/internal/middleware"
 )
 
 func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {

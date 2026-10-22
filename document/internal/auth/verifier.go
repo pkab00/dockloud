@@ -42,7 +42,7 @@ func (v *Verifier) Verify(rawToken string) (string, error) {
 		jwt.WithValidMethods(
 			[]string{jwt.SigningMethodHS256.Alg()},
 		),
-		jwt.WithIssuer("dockloud-api"),
+		jwt.WithIssuer("dockloud-document"),
 		jwt.WithExpirationRequired(),
 	)
 

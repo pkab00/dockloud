@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	apperror "github.com/pkab00/dockloud/api/internal/error"
+	apperror "github.com/pkab00/dockloud/document/internal/error"
 	"github.com/pkab00/dockloud/shared/contract"
 )
 

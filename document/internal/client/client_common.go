@@ -15,13 +15,13 @@ type Client struct {
 
 func NewClient(baseURL string) (*Client, error) {
 	apiClaims := serviceauth.Claims{
-		Subject:  "dockloud-api",
-		Issuer:   "dockloud-api",
+		Subject:  "dockloud-document",
+		Issuer:   "dockloud-document",
 		Audience: []string{"dockloud-data", "dockloud-link"},
 	}
 
 	token, err := serviceauth.GenerateToken(
-		os.Getenv("API_SERVICE_KEY"),
+		os.Getenv("DOCUMENT_SERVICE_KEY"),
 		apiClaims,
 	)
 	if err != nil {

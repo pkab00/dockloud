@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkab00/dockloud/api/internal/client"
-	"github.com/pkab00/dockloud/api/internal/client/data"
-	"github.com/pkab00/dockloud/api/internal/model"
+	"github.com/pkab00/dockloud/document/internal/client"
+	"github.com/pkab00/dockloud/document/internal/client/data"
+	"github.com/pkab00/dockloud/document/internal/model"
 )
 
 type Client struct {

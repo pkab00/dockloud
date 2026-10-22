@@ -7,14 +7,14 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /app/api-bin ./api/cmd/app
+RUN go build -o /app/document-bin ./document/cmd/app
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/api-bin ./
+COPY --from=builder /app/document-bin ./
 
 EXPOSE 8080
 
-CMD ["./api-bin"]
+CMD ["./document-bin"]
