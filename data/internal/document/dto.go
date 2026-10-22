@@ -2,7 +2,7 @@ package document
 
 import "time"
 
-type DocumentResponse struct {
+type Response struct {
 	ID        int       `json:"id"`
 	OwnerID   string    `json:"owner_id"`
 	Name      string    `json:"name"`
@@ -12,12 +12,12 @@ type DocumentResponse struct {
 	EditedAt  time.Time `json:"edited_at"`
 }
 
-func (d *Document) toResponse() *DocumentResponse {
+func (d *Document) toResponse() *Response {
 	if d == nil {
 		return nil
 	}
 
-	return &DocumentResponse{
+	return &Response{
 		ID:        d.ID,
 		OwnerID:   d.OwnerID,
 		Name:      d.Name,

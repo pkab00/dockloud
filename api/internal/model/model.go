@@ -19,6 +19,21 @@ type Document struct {
 	EditedAt  time.Time `json:"edited_at"`
 }
 
+type Permissions struct {
+	Read   bool `json:"read"`
+	Write  bool `json:"write"`
+	Delete bool `json:"delete"`
+}
+
+type Link struct {
+	DocumentID  int         `json:"document_id"`
+	Token       string      `json:"token"`
+	Permissions Permissions `json:"permissions"`
+	CreatedAt   time.Time   `json:"created_at"`
+	ExpiresAt   *time.Time  `json:"expires_at"`
+	RevokedAt   *time.Time  `json:"revoked_at"`
+}
+
 type UserFindResult struct {
 	UIDExists      bool `json:"uid_exists"`
 	UsernameExists bool `json:"username_exists"`

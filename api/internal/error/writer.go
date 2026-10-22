@@ -1,6 +1,7 @@
 package apperror
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/pkab00/dockloud/shared/contract"
@@ -26,14 +27,14 @@ func WriteClientError(w http.ResponseWriter, err ClientError) {
 			w,
 			err.Status,
 			err.Code,
-			"Invalid username. Pleace make sure you provided a correct string.",
+			"Invalid username. Please make sure you provided a correct string.",
 		)
 	case contract.ErrInvalidEmail:
 		contract.WriteErrorAsJSON(
 			w,
 			err.Status,
 			err.Code,
-			"Invalid email. Pleace check the format amd try again.",
+			"Invalid email. Please check the format amd try again.",
 		)
 	case contract.ErrUsernameTaken:
 		contract.WriteErrorAsJSON(
@@ -98,12 +99,48 @@ func WriteClientError(w http.ResponseWriter, err ClientError) {
 			err.Code,
 			"Unsupported document name. Please fix your request and try again.",
 		)
+	case contract.ErrPermissionDenied:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Permission denied.",
+		)
+	case contract.ErrLinksNotFound:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Links not found.",
+		)
+	case contract.ErrLinkExpired:
+		contract.WriteErrorAsJSON(
+			w,
+			err.Status,
+			err.Code,
+			"Link is expired.",
+		)
+	case contract.ErrLinkCreationNotAllowed:
+		contract.WriteErrorAsJSON(
+			w,
+			http.StatusNotFound,
+			contract.ErrDocumentNotFound,
+			"No existing documents found by request.",
+		)
 	default:
 		contract.WriteErrorAsJSON(
 			w,
 			http.StatusInternalServerError,
 			err.Code,
-			"Unknown internal error.",
+			"Unknown client error.",
 		)
+	}
+}
+
+func HandleError(w http.ResponseWriter, err error) {
+	if clientErr, ok := errors.AsType[*ClientError](err); ok {
+		WriteClientError(w, *clientErr)
+	} else {
+		WriteUnknownError(w)
 	}
 }

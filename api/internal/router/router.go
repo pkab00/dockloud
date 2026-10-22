@@ -5,17 +5,23 @@ import (
 	"net/http"
 
 	"github.com/pkab00/dockloud/api/internal/auth"
-	"github.com/pkab00/dockloud/api/internal/client/data"
+	dataclient "github.com/pkab00/dockloud/api/internal/client/data"
+	linkclient "github.com/pkab00/dockloud/api/internal/client/link"
 	"github.com/pkab00/dockloud/api/internal/document"
+	"github.com/pkab00/dockloud/api/internal/link"
 	"github.com/pkab00/dockloud/api/internal/middleware"
 )
 
 func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	var err error
 
-	dataClient, err := data.NewClient("http://data:8081")
+	dataClient, err := dataclient.NewClient("http://data:8081")
 	if err != nil {
 		log.Fatalf("failed to initialize data client: %v", err)
+	}
+	linkClient, err := linkclient.NewClient("http://link:8082")
+	if err != nil {
+		log.Fatalf("failed to initialize link client: %v", err)
 	}
 	verifier, err := auth.NewVerifier(JWTsecret)
 	if err != nil {
@@ -25,12 +31,15 @@ func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	var (
 		authService = auth.NewService(dataClient)
 		authHandler = auth.NewHandler(authService)
-		docService  = document.NewService(dataClient)
+		docService  = document.NewService(dataClient, linkClient)
 		docHandler  = document.NewHandler(docService)
+		linkService = link.NewService(linkClient)
+		linkHandler = link.NewHandler(linkService)
 	)
 
 	mux.HandleFunc("POST /register", authHandler.Register)
 	mux.HandleFunc("POST /login", authHandler.Login)
+
 	mux.Handle(
 		"POST /documents",
 		middleware.Auth(verifier)(http.HandlerFunc(docHandler.Create)),
@@ -50,5 +59,31 @@ func RegisterRoutes(mux *http.ServeMux, JWTsecret string) {
 	mux.Handle(
 		"DELETE /documents/{id}",
 		middleware.Auth(verifier)(http.HandlerFunc(docHandler.Delete)),
+	)
+
+	mux.Handle(
+		"GET /documents/shared/{token}",
+		http.HandlerFunc(docHandler.GetShared),
+	)
+	mux.Handle(
+		"PATCH /documents/shared/{token}",
+		http.HandlerFunc(docHandler.UpdateShared),
+	)
+	mux.Handle(
+		"DELETE /documents/shared/{token}",
+		http.HandlerFunc(docHandler.DeleteShared),
+	)
+
+	mux.Handle(
+		"GET /links",
+		middleware.Auth(verifier)(http.HandlerFunc(linkHandler.Get)),
+	)
+	mux.Handle(
+		"POST /links",
+		middleware.Auth(verifier)(http.HandlerFunc(linkHandler.Create)),
+	)
+	mux.Handle(
+		"DELETE /links/{token}",
+		middleware.Auth(verifier)(http.HandlerFunc(linkHandler.Revoke)),
 	)
 }
