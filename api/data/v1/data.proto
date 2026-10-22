@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package link.v1;
+option go_package = "pkg/proto/link";
+
+import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "common/user.proto";
+
+service DataService {
+  rpc Auth(AuthRequest) returns (UserResponse);
+  rpc Register(RegisterRequest) returns (UserResponse);
+  rpc FindUser(FindUserRequest) returns (FindUserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (UserResponse);
+  rpc CreateDocument(CreateDocumentRequest) returns (DocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (DocumentResponse);
+  rpc GetDocumentsList(google.protobuf.Empty) returns (DocumentsListResponse);
+  rpc GetDocumentPublicly(GetDocumentRequest) returns (DocumentResponse);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (DocumentResponse);
+  rpc UpdateDocumentPublicly(UpdateDocumentRequest) returns (DocumentResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DocumentResponse);
+  rpc DeleteDocumentPublicly(DeleteDocumentRequest) returns (DocumentResponse);
+}
+
+message UserResponse {
+  string uid = 1 [(buf.validate.field).string.uuid = true];
+  string username = 2;
+  string email = 3 [(buf.validate.field).string.email = true];
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message FindUserResponse {
+  bool uid_exists = 1;
+  bool username_exists = 2;
+  bool email_exists = 3;
+}
+
+message DocumentResponse {
+  Document document = 1;
+}
+
+message DocumentsListResponse {
+  repeated Document document = 1;
+}
+
+message AuthRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string password_hash = 2;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string email = 2 [(buf.validate.field).string.email = true];
+  string password_hash = 3;
+}
+
+message FindUserRequest {
+  optional string uid = 1 [(buf.validate.field).string.uuid = true];
+  optional string username = 2;
+  optional string email = 3 [(buf.validate.field).string.email = true];
+}
+
+message UpdateUserRequest {
+  optional string username = 1;
+  optional string email = 2 [(buf.validate.field).string.email = true];
+  optional string password_hash = 3;
+}
+
+message DeleteUserRequest {
+  string uid = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message CreateDocumentRequest {
+  string owner_id = 1 [(buf.validate.field).string.uuid = true];
+  string name = 2;
+  string content = 3;
+  bool is_private = 4;
+}
+
+message GetDocumentRequest {
+  int64 document_id = 1;
+}
+
+message UpdateDocumentRequest {
+  optional string name = 1;
+  optional string content = 2;
+  optional bool is_private = 3;
+}
+
+message DeleteDocumentRequest {
+  int64 document_id = 1;
+}

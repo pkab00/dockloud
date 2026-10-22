@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+message Document {
+  int64 id = 1;
+  string owner_id = 2 [(buf.validate.field).string.uuid = true];
+  string name = 3;
+  string content = 4;
+  bool is_private = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp edited_at = 7;
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+message Document {
+  string uid = 1 [(buf.validate.field).string.uuid = true];
+  string username = 2;
+  string email = 3 [(buf.validate.field).string.email = true];
+  string password_hash = 4;
+  google.protobuf.Timestamp created_at = 5;
+}

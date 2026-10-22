@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package link.v1;
+option go_package = "pkg/proto/link";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "common/link.proto";
+import "common/document.proto";
+
+service LinkService {
+  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+  rpc CreateLink(CreateLinkRequest) returns (CreateLinkResponse);
+  rpc RevokeLink(RevokeLinkRequest) returns (google.protobuf.Empty);
+
+  rpc GetDocument(DocumentRequest) returns (Document);
+  rpc CreateDocument(DocumentRequest) returns (Document);
+  rpc DeleteDocument(DocumentRequest) returns (Document);
+}
+
+message GetLinksRequest {
+  string creator_id = 1 [(buf.validate.field).string.uuid = true];
+  optional int64 document_id = 2;
+}
+
+message GetLinksResponse {
+  repeated Link links = 1;
+}
+
+message CreateLinkRequest {
+  int64 document_id = 1;
+  Permissions permissions = 2;
+  optional google.protobuf.Timestamp expires_at = 3;
+}
+
+message CreateLinkResponse {
+  Link link = 1;
+}
+
+message RevokeLinkRequest {
+  string requester_id = 1 [(buf.validate.field).string.uuid = true];
+  string token = 2;
+}
+
+message DocumentRequest {
+  string token = 1;
+}
