@@ -24,7 +24,7 @@ func (al *AccessLink) isActiveLink() bool {
 }
 
 type AccessPermissions struct {
-	Read   bool `json:"read" redis:"read"`
-	Write  bool `json:"write" redis:"write"`
-	Delete bool `json:"delete" redis:"delete"`
+	Read   *bool `json:"read" redis:"read"`
+	Write  *bool `json:"write" redis:"write"`
+	Delete *bool `json:"delete" redis:"delete"`
 }

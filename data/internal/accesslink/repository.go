@@ -150,9 +150,9 @@ func (r *PostgresRepository) GetByToken(ctx context.Context, token string) (*Acc
 
 	if al.isActiveLink() {
 		return &al, nil
-	} else {
-		return nil, apperrors.AccessLinkExpired
 	}
+
+	return nil, apperrors.AccessLinkExpired
 }
 
 func (r *PostgresRepository) Create(ctx context.Context, reqID string, req *CreateLinkRequest) (*AccessLink, error) {

@@ -19,6 +19,19 @@ type ExternalCreateLinkRequest struct {
 	ExpiresAt   *time.Time        `json:"expires_at"`
 }
 
+func fixNullsInPermissions(permissions *AccessPermissions) {
+	newValue := false
+	if permissions.Read == nil {
+		permissions.Read = &newValue
+	}
+	if permissions.Write == nil {
+		permissions.Write = &newValue
+	}
+	if permissions.Delete == nil {
+		permissions.Delete = &newValue
+	}
+}
+
 func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
@@ -28,9 +41,9 @@ func (s *Service) GetAll(ctx context.Context, creatorID string) ([]AccessLink, e
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NoLinksFound
-		} else {
-			return nil, err
 		}
+
+		return nil, err
 	}
 	return res, nil
 }
@@ -40,9 +53,9 @@ func (s *Service) GetAllForDocument(ctx context.Context, creatorID string, docID
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NoLinksFound
-		} else {
-			return nil, err
 		}
+
+		return nil, err
 	}
 	return res, nil
 
@@ -53,14 +66,15 @@ func (s *Service) GetByToken(ctx context.Context, token string) (*AccessLink, er
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NoLinksFound
-		} else {
-			return nil, err
 		}
+
+		return nil, err
 	}
 	return res, nil
 }
 
 func (s *Service) Create(ctx context.Context, reqID string, req *CreateLinkRequest) (*AccessLink, error) {
+	fixNullsInPermissions(&req.Permissions)
 	return s.repo.Create(ctx, reqID, req)
 }
 

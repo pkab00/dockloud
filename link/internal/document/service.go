@@ -27,7 +27,7 @@ func (s *Service) Get(ctx context.Context, token string) (*model.Document, error
 		return nil, apperror.ErrTokenExpired
 	case link.Revoked():
 		return nil, apperror.ErrTokenRevoked
-	case !link.Permissions.Read:
+	case !*link.Permissions.Read:
 		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.GetDocument(ctx, link.DocumentID)
@@ -49,7 +49,7 @@ func (s *Service) Update(ctx context.Context, token string, req data.UpdateDocum
 		return nil, apperror.ErrTokenExpired
 	case link.Revoked():
 		return nil, apperror.ErrTokenRevoked
-	case !link.Permissions.Write:
+	case !*link.Permissions.Write:
 		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.UpdateDocument(ctx, req, link.DocumentID)
@@ -71,7 +71,7 @@ func (s *Service) Delete(ctx context.Context, token string) (*model.Document, er
 		return nil, apperror.ErrTokenExpired
 	case link.Revoked():
 		return nil, apperror.ErrTokenRevoked
-	case !link.Permissions.Delete:
+	case !*link.Permissions.Delete:
 		return nil, apperror.ErrNoPermission
 	default:
 		doc, err := s.client.DeleteDocument(ctx, link.DocumentID)

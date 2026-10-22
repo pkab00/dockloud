@@ -23,9 +23,9 @@ type Link struct {
 }
 
 type Permissions struct {
-	Read   bool `json:"read"`
-	Write  bool `json:"write"`
-	Delete bool `json:"delete"`
+	Read   *bool `json:"read"`
+	Write  *bool `json:"write"`
+	Delete *bool `json:"delete"`
 }
 
 func (l *Link) Expired() bool {
