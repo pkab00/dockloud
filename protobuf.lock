@@ -1,0 +1,7 @@
+# protobuf.lock - GENERATED FILE, DO NOT EDIT MANUALLY
+version: 1
+modules:
+    - source: github.com/bufbuild/protovalidate
+      version: v1.2.2
+      commit: 4baed765070e580226a0a30bf2a357cc027dc1f7
+      hash: h1:pbc9PdqIecyESQJ6wKP0D3S0wkkyya8gcA1kQns0DIU=

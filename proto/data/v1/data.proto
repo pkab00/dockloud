@@ -1,12 +1,13 @@
 syntax = "proto3";
 
 package link.v1;
-option go_package = "pkg/proto/link";
+option go_package = "github.com/pkab00/dockloud/gen/data/v1";
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "common/user.proto";
+import "common/v1/user.proto";
+import "common/v1/document.proto";
 
 service DataService {
   rpc Auth(AuthRequest) returns (UserResponse);
@@ -38,11 +39,11 @@ message FindUserResponse {
 }
 
 message DocumentResponse {
-  Document document = 1;
+  common.v1.Document document = 1;
 }
 
 message DocumentsListResponse {
-  repeated Document document = 1;
+  repeated common.v1.Document document = 1;
 }
 
 message AuthRequest {

@@ -1,22 +1,22 @@
 syntax = "proto3";
 
 package link.v1;
-option go_package = "pkg/proto/link";
+option go_package = "github.com/pkab00/dockloud/gen/link/v1";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
-import "common/link.proto";
-import "common/document.proto";
+import "common/v1/link.proto";
+import "common/v1/document.proto";
 
 service LinkService {
   rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
   rpc CreateLink(CreateLinkRequest) returns (CreateLinkResponse);
   rpc RevokeLink(RevokeLinkRequest) returns (google.protobuf.Empty);
 
-  rpc GetDocument(DocumentRequest) returns (Document);
-  rpc CreateDocument(DocumentRequest) returns (Document);
-  rpc DeleteDocument(DocumentRequest) returns (Document);
+  rpc GetDocument(DocumentRequest) returns (common.v1.Document);
+  rpc CreateDocument(DocumentRequest) returns (common.v1.Document);
+  rpc DeleteDocument(DocumentRequest) returns (common.v1.Document);
 }
 
 message GetLinksRequest {
@@ -25,17 +25,17 @@ message GetLinksRequest {
 }
 
 message GetLinksResponse {
-  repeated Link links = 1;
+  repeated common.v1.Link links = 1;
 }
 
 message CreateLinkRequest {
   int64 document_id = 1;
-  Permissions permissions = 2;
+  common.v1.Permissions permissions = 2;
   optional google.protobuf.Timestamp expires_at = 3;
 }
 
 message CreateLinkResponse {
-  Link link = 1;
+  common.v1.Link link = 1;
 }
 
 message RevokeLinkRequest {

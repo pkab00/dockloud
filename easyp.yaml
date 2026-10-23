@@ -1,0 +1,5 @@
+version: v1
+linters:
+  default: STANDARD
+breaking:
+  baseline: git:main

@@ -1,0 +1,12 @@
+version: v1
+plugins:
+  - name: go
+    out: ./gen
+    opts:
+      paths: source_relative
+
+  - name: go-grpc
+    out: ./gen
+    opts:
+      paths: source_relative
+      require_unimplemented_servers: false
